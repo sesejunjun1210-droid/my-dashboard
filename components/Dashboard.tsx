@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -104,7 +103,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
   // Market Insight Logic
   const currentInsight = useMemo(() => {
     const monthToShow = selectedMonth === 'all' ? new Date().getMonth() + 1 : selectedMonth;
-    return MARKET_INSIGHTS[monthToShow];
+    return MARKET_INSIGHTS[monthToShow as number];
   }, [selectedMonth]);
 
   // KPI Calculation
@@ -125,7 +124,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
     return 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
   };
 
-  // 1. Trend Chart Data
+  // 1. Trend Chart Data (일/주/월)
   const trendData = useMemo(() => {
     const map: Record<string, { revenue: number, profit: number, sortKey: string | number }> = {};
     
@@ -185,24 +184,66 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
       map[brand].profit += item.netProfit;
     });
     return Object.keys(map)
-      .map(key => ({ name: key, ...map[key], margin: map[key].revenue > 0 ? Math.round((map[key].profit / map[key].revenue) * 100) : 0 }))
+      .map(key => ({
+        name: key,
+        ...map[key],
+        margin: map[key].revenue > 0
+          ? Math.round((map[key].profit / map[key].revenue) * 100)
+          : 0
+      }))
       .filter(i => i.name !== 'Others')
       .sort((a, b) => b.profit - a.profit)
       .slice(0, 5);
   }, [filteredData]);
 
+  // 4. 월별 요약(표용) – 여기서 진짜 "월별 매출표"를 숫자로 뽑음
+  const monthlySummary = useMemo(() => {
+    const map: Record<
+      string,
+      { year: number; month: number; sales: number; cost: number; net: number }
+    > = {};
+
+    filteredData.forEach(row => {
+      const year = row.year || 0;
+      const month = row.month || 0;
+      if (!year || !month) return;
+
+      const key = `${year}-${String(month).padStart(2, '0')}`;
+      if (!map[key]) {
+        map[key] = { year, month, sales: 0, cost: 0, net: 0 };
+      }
+      map[key].sales += row.sales || 0;
+      map[key].cost += row.cost || 0;
+      map[key].net += typeof row.netProfit === 'number'
+        ? row.netProfit
+        : (row.sales || 0) + (row.cost || 0);
+    });
+
+    const rows = Object.values(map).sort((a, b) => {
+      if (a.year !== b.year) return a.year - b.year;
+      return a.month - b.month;
+    });
+
+    const totalSales = rows.reduce((s, r) => s + r.sales, 0);
+    const totalCost = rows.reduce((s, r) => s + r.cost, 0);
+    const totalNet = rows.reduce((s, r) => s + r.net, 0);
+
+    return { rows, totalSales, totalCost, totalNet };
+  }, [filteredData]);
+
   if (!data || data.length === 0) {
-      return (
-        <div className="p-20 text-center flex flex-col items-center justify-center">
-           <Filter className="w-12 h-12 text-slate-300 mb-4" />
-           <p className="text-slate-500 font-medium">데이터가 없습니다.<br/>Google Sheet를 확인해주세요.</p>
-        </div>
-      );
+    return (
+      <div className="p-20 text-center flex flex-col items-center justify-center">
+        <Filter className="w-12 h-12 text-slate-300 mb-4" />
+        <p className="text-slate-500 font-medium">
+          데이터가 없습니다.<br />Google Sheet를 확인해주세요.
+        </p>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500 pb-10">
-      
       {/* 1. Market Intelligence Banner */}
       <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-5 rounded-2xl shadow-lg border border-slate-700 relative overflow-hidden">
         <div className="absolute top-0 right-0 p-4 opacity-10">
@@ -211,17 +252,24 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
         <div className="relative z-10 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="bg-amber-400 text-slate-900 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Market Insight</span>
+              <span className="bg-amber-400 text-slate-900 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+                Market Insight
+              </span>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                 {selectedMonth === 'all' ? new Date().getMonth() + 1 : selectedMonth}월의 명품 수선 트렌드: {currentInsight.title}
+                {(selectedMonth === 'all'
+                  ? new Date().getMonth() + 1
+                  : selectedMonth) + '월의 명품 수선 트렌드'}: {currentInsight?.title}
               </h3>
             </div>
             <div className="flex flex-wrap gap-2 text-sm text-slate-300">
-               {currentInsight.events.map((event, i) => (
-                 <span key={i} className="flex items-center gap-1 bg-slate-800/50 px-2 py-1 rounded-lg border border-slate-600/50">
-                   <Info size={12} className="text-blue-400" /> {event}
-                 </span>
-               ))}
+              {currentInsight?.events.map((event, i) => (
+                <span
+                  key={i}
+                  className="flex items-center gap-1 bg-slate-800/50 px-2 py-1 rounded-lg border border-slate-600/50"
+                >
+                  <Info size={12} className="text-blue-400" /> {event}
+                </span>
+              ))}
             </div>
           </div>
           <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl border border-white/10 max-w-md">
@@ -229,7 +277,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
               <Lightbulb size={18} className="text-amber-300 shrink-0 mt-0.5" />
               <p className="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
                 <span className="text-amber-300 font-bold">Pro Tip: </span>
-                {currentInsight.tips}
+                {currentInsight?.tips}
               </p>
             </div>
           </div>
@@ -239,9 +287,9 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
       {/* 2. Controls */}
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
         <div>
-          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-             <Filter size={18} className="text-blue-600" />
-             기간 및 보기 설정
+          <h2 className="text-lg font-bold text-slate-800 flex itemscenter gap-2">
+            <Filter size={18} className="text-blue-600" />
+            기간 및 보기 설정
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
             원하는 기간을 필터링하고, <strong>일간/주간/월간</strong> 버튼을 눌러 흐름을 변경하세요.
@@ -251,24 +299,36 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
         <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
           {/* View Type Toggle */}
           <div className="flex bg-slate-100 p-1 rounded-lg mr-2">
-             <button 
-               onClick={() => setViewType('daily')}
-               className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${viewType === 'daily' ? 'bg-white shadow text-blue-700' : 'text-slate-500 hover:text-slate-700'}`}
-             >
-               일간
-             </button>
-             <button 
-               onClick={() => setViewType('weekly')}
-               className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${viewType === 'weekly' ? 'bg-white shadow text-blue-700' : 'text-slate-500 hover:text-slate-700'}`}
-             >
-               주간
-             </button>
-             <button 
-               onClick={() => setViewType('monthly')}
-               className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${viewType === 'monthly' ? 'bg-white shadow text-blue-700' : 'text-slate-500 hover:text-slate-700'}`}
-             >
-               월간
-             </button>
+            <button 
+              onClick={() => setViewType('daily')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
+                viewType === 'daily'
+                  ? 'bg-white shadow text-blue-700'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              일간
+            </button>
+            <button 
+              onClick={() => setViewType('weekly')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
+                viewType === 'weekly'
+                  ? 'bg-white shadow text-blue-700'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              주간
+            </button>
+            <button 
+              onClick={() => setViewType('monthly')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
+                viewType === 'monthly'
+                  ? 'bg-white shadow text-blue-700'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              월간
+            </button>
           </div>
 
           <div className="h-6 w-px bg-slate-200 hidden sm:block"></div>
@@ -293,8 +353,8 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
             onChange={(e) => setSelectedMonth(e.target.value === 'all' ? 'all' : Number(e.target.value))}
             className={`px-3 py-2 rounded-lg border text-sm font-semibold focus:outline-none ${
               selectedYear === 'all' 
-              ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' 
-              : 'bg-slate-50 border-slate-200 text-slate-700'
+                ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' 
+                : 'bg-slate-50 border-slate-200 text-slate-700'
             }`}
           >
             <option value="all">전체 월</option>
@@ -346,7 +406,9 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
         {/* Main Trend Chart */}
         <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-slate-800">매출 흐름 ({viewType === 'daily' ? '일간' : viewType === 'weekly' ? '주간' : '월간'})</h3>
+            <h3 className="text-lg font-bold text-slate-800">
+              매출 흐름 ({viewType === 'daily' ? '일간' : viewType === 'weekly' ? '주간' : '월간'})
+            </h3>
             <div className="flex gap-4">
               <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span> 매출
@@ -384,35 +446,111 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
         {/* Weekday Analysis */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
           <div className="mb-4">
-             <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-               <Calendar size={18} className="text-purple-500" /> 요일별 작업량
-             </h3>
-             <p className="text-xs text-slate-500">어떤 요일에 매출이 집중되는지 확인하세요.</p>
+            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <Calendar size={18} className="text-purple-500" /> 요일별 작업량
+            </h3>
+            <p className="text-xs text-slate-500">어떤 요일에 매출이 집중되는지 확인하세요.</p>
           </div>
 
           <div className="flex-1 w-full min-h-[250px]">
-             <ResponsiveContainer width="100%" height="100%">
-               <BarChart data={weekdayData}>
-                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
-                 <Tooltip 
-                    cursor={{fill: '#f8fafc'}}
-                    contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
-                    formatter={(val: number) => [`₩ ${val.toLocaleString()}`, '매출']}
-                 />
-                 <Bar dataKey="revenue" radius={[6, 6, 6, 6]}>
-                    {weekdayData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={index >= 5 ? '#f59e0b' : '#6366f1'} />
-                    ))}
-                 </Bar>
-               </BarChart>
-             </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weekdayData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
+                <Tooltip 
+                  cursor={{fill: '#f8fafc'}}
+                  contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
+                  formatter={(val: number) => [`₩ ${val.toLocaleString()}`, '매출']}
+                />
+                <Bar dataKey="revenue" radius={[6, 6, 6, 6]}>
+                  {weekdayData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={index >= 5 ? '#f59e0b' : '#6366f1'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
           <div className="mt-2 text-[10px] text-slate-400 text-center flex justify-center gap-3">
-             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-500"></span>평일</span>
-             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500"></span>주말</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-500"></span>평일</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500"></span>주말</span>
           </div>
         </div>
+      </div>
+
+      {/* 5. 월별 매출표 (진짜 숫자 확인용) */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-slate-800">월별 매출/순이익 표</h3>
+            <p className="text-xs text-slate-500">
+              현재 필터(연도/월)에 맞는 데이터를 기준으로 월별 합계를 정리했습니다.
+            </p>
+          </div>
+        </div>
+
+        {monthlySummary.rows.length === 0 ? (
+          <p className="text-sm text-slate-500">표시할 데이터가 없습니다.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50">
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">
+                    연도
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">
+                    월
+                  </th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-slate-500">
+                    매출 합계
+                  </th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-slate-500">
+                    외주 / 비용 합계
+                  </th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-slate-500">
+                    순이익
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthlySummary.rows.map((m) => (
+                  <tr key={`${m.year}-${m.month}`} className="border-b border-slate-100">
+                    <td className="px-3 py-2 text-slate-700">{m.year}</td>
+                    <td className="px-3 py-2 text-slate-700">
+                      {String(m.month).padStart(2, '0')}월
+                    </td>
+                    <td className="px-3 py-2 text-right text-slate-900 font-medium">
+                      {m.sales.toLocaleString()}원
+                    </td>
+                    <td className="px-3 py-2 text-right text-rose-600 font-medium">
+                      {m.cost.toLocaleString()}원
+                    </td>
+                    <td className="px-3 py-2 text-right text-emerald-600 font-bold">
+                      {m.net.toLocaleString()}원
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-slate-200 bg-slate-50/80">
+                  <td className="px-3 py-2 text-xs font-semibold text-slate-600">
+                    합계
+                  </td>
+                  <td />
+                  <td className="px-3 py-2 text-right text-xs font-semibold text-slate-900">
+                    {monthlySummary.totalSales.toLocaleString()}원
+                  </td>
+                  <td className="px-3 py-2 text-right text-xs font-semibold text-rose-600">
+                    {monthlySummary.totalCost.toLocaleString()}원
+                  </td>
+                  <td className="px-3 py-2 text-right text-xs font-semibold text-emerald-600">
+                    {monthlySummary.totalNet.toLocaleString()}원
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
