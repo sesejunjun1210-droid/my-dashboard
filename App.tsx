@@ -25,7 +25,7 @@ const parseDateParts = (raw?: string | null) => {
   const v = cleanString(raw);
   if (!v) return null;
 
-  // 앞쪽에서 "숫자 4개(연도) - (숫자) - (숫자)" 이런 패턴만 잡으면 됨
+  // "2024 무언가 11 무언가 1" 패턴만 잡으면 됨
   const m = v.match(/^(\d{4})\D+(\d{1,2})\D+(\d{1,2})?/);
   if (!m) return null;
 
@@ -37,7 +37,7 @@ const parseDateParts = (raw?: string | null) => {
 
   const mm = String(month).padStart(2, '0');
   const dd = String(day).padStart(2, '0');
-  const display = `${year}-${mm}-${dd}`;
+  const display = `${year}-${mm}-${dd}`; // "2024-11-01"
 
   return { year, month, day, display };
 };
@@ -109,26 +109,22 @@ const App: React.FC = () => {
         try {
           const parsedRecords: SaleRecord[] = (results.data as any[])
             .map((row: any, index: number) => {
-              const rawDate =
-                row.date || row.Date || row.날짜 || row['date '] || '';
+              // 1) 날짜 파싱
+              const rawDate = row.date || row.Date || row.날짜 || '';
+              const dateParts = parseDateParts(rawDate);
+              if (!dateParts) {
+                // 날짜 완전 이상하면 이 행 버림
+                return null;
+              }
+              const { year, month, day, display } = dateParts;
 
-              // 날짜 파츠 강제 파싱
-              const parts = parseDateParts(rawDate);
-              const now = new Date();
-
-              const year = parts?.year ?? now.getFullYear();
-              const month = parts?.month ?? now.getMonth() + 1;
-              const day = parts?.day ?? 1;
-              const displayDate =
-                parts?.display ?? now.toISOString().split('T')[0];
-
-              // 금액 정규화
-              const sales = parseNumeric(row.sales ?? row.매출);
-              const cost = parseNumeric(row.cost ?? row.지출);
+              // 2) 금액 파싱 (F열: 매출, G열: 외주비)
+              const sales = parseNumeric(row.sales || row.매출 || '0');
+              const cost = parseNumeric(row.cost || row.지출 || '0');
 
               return {
                 id: `row-${index}`,
-                date: displayDate, // 화면에 보이는 날짜
+                date: display, // "YYYY-MM-DD"
                 year,
                 month,
                 day,
@@ -138,13 +134,17 @@ const App: React.FC = () => {
                 description: cleanString(row.description),
                 sales,
                 cost,
-                netProfit: sales - cost,
+                // ★ 순이익 = 매출(F) + 외주비(G, 시트에서 -50,000 형태라고 하셨으니 그대로 더함)
+                netProfit: sales + cost,
                 customer_name: cleanName(row.customer_name),
                 phone: cleanString(row.phone),
               };
             })
-            // 완전 빈 줄 제거 (카테고리도 비어 있고, 매출도 0인 줄은 버림)
-            .filter((r) => r.sales !== 0 || r.category !== '');
+            // null(날짜 이상) 제거 + 완전 빈 줄 제거
+            .filter(
+              (r): r is SaleRecord =>
+                !!r && (r.sales !== 0 || r.category !== ''),
+            );
 
           setSalesData(parsedRecords);
         } catch (err) {
