@@ -18,15 +18,28 @@ const cleanString = (value?: string | null): string => {
   return String(value).replace(/\r?\n/g, ' ').trim();
 };
 
-// "2024. 8. 1" → "2024-08-01" 형식으로 정리
-const formatDate = (raw?: string | null): string => {
+// 날짜에서 연/월/일만 뽑기
+// 예) "2024. 11. 1", "2024-11-01", "2024/11/01", "2024년 11월 1일"
+// 전부 다: year=2024, month=11, day=1 로 강제 파싱
+const parseDateParts = (raw?: string | null) => {
   const v = cleanString(raw);
-  const m = v.match(/^(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})/); // 예: 2024. 8. 1
-  if (!m) return v;
-  const [, y, mo, d] = m;
-  const mm = mo.padStart(2, '0');
-  const dd = d.padStart(2, '0');
-  return `${y}-${mm}-${dd}`;
+  if (!v) return null;
+
+  // 앞쪽에서 "숫자 4개(연도) - (숫자) - (숫자)" 이런 패턴만 잡으면 됨
+  const m = v.match(/^(\d{4})\D+(\d{1,2})\D+(\d{1,2})?/);
+  if (!m) return null;
+
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const day = m[3] ? Number(m[3]) : 1;
+
+  if (!year || !month) return null;
+
+  const mm = String(month).padStart(2, '0');
+  const dd = String(day).padStart(2, '0');
+  const display = `${year}-${mm}-${dd}`;
+
+  return { year, month, day, display };
 };
 
 // "김수아 [C / 수아]" → "김수아"
@@ -96,33 +109,29 @@ const App: React.FC = () => {
         try {
           const parsedRecords: SaleRecord[] = (results.data as any[])
             .map((row: any, index: number) => {
-              // 1) 날짜 정규화
-              const rawDate = row.date || row.Date || row.날짜 || '';
-              const normalizedDate = formatDate(rawDate);
-              const dateObj = new Date(normalizedDate);
-              const isValidDate = !isNaN(dateObj.getTime());
+              const rawDate =
+                row.date || row.Date || row.날짜 || row['date '] || '';
+
+              // 날짜 파츠 강제 파싱
+              const parts = parseDateParts(rawDate);
               const now = new Date();
 
-              // 2) 금액 정규화
-              const sales = parseNumeric(row.sales ?? row.매출 ?? '0');
-              const cost = parseNumeric(row.cost ?? row.지출 ?? '0');
+              const year = parts?.year ?? now.getFullYear();
+              const month = parts?.month ?? now.getMonth() + 1;
+              const day = parts?.day ?? 1;
+              const displayDate =
+                parts?.display ?? now.toISOString().split('T')[0];
 
-              // 3) 이름/전화번호 정리 (한/영 헤더 둘 다 대응)
-              const customerName = cleanName(
-                row.customer_name ?? row.고객명 ?? ''
-              );
-              const phone = cleanString(row.phone ?? row.전화번호 ?? '');
+              // 금액 정규화
+              const sales = parseNumeric(row.sales ?? row.매출);
+              const cost = parseNumeric(row.cost ?? row.지출);
 
               return {
                 id: `row-${index}`,
-                date: isValidDate
-                  ? normalizedDate
-                  : now.toISOString().split('T')[0],
-                year: isValidDate ? dateObj.getFullYear() : now.getFullYear(),
-                month: isValidDate
-                  ? dateObj.getMonth() + 1
-                  : now.getMonth() + 1,
-                day: isValidDate ? dateObj.getDate() : 1,
+                date: displayDate, // 화면에 보이는 날짜
+                year,
+                month,
+                day,
                 category: cleanString(row.category) || '기타',
                 sub_category: cleanString(row.sub_category) || '기타',
                 brand: cleanString(row.brand) || 'Others',
@@ -130,11 +139,11 @@ const App: React.FC = () => {
                 sales,
                 cost,
                 netProfit: sales - cost,
-                customer_name: customerName,
-                phone,
+                customer_name: cleanName(row.customer_name),
+                phone: cleanString(row.phone),
               };
             })
-            // 완전 빈 줄 제거
+            // 완전 빈 줄 제거 (카테고리도 비어 있고, 매출도 0인 줄은 버림)
             .filter((r) => r.sales !== 0 || r.category !== '');
 
           setSalesData(parsedRecords);
