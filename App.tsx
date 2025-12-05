@@ -15,13 +15,13 @@ import { Menu, Search, Bell, Lock, AlertCircle, Loader2 } from 'lucide-react';
 // 공백/줄바꿈 정리
 const cleanString = (value?: string | null): string => {
   if (!value) return '';
-  return value.replace(/\r?\n/g, ' ').trim();
+  return String(value).replace(/\r?\n/g, ' ').trim();
 };
 
 // "2024. 8. 1" → "2024-08-01" 형식으로 정리
 const formatDate = (raw?: string | null): string => {
   const v = cleanString(raw);
-  const m = v.match(/^(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})/); // 2024. 8. 1
+  const m = v.match(/^(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})/); // 예: 2024. 8. 1
   if (!m) return v;
   const [, y, mo, d] = m;
   const mm = mo.padStart(2, '0');
@@ -96,16 +96,22 @@ const App: React.FC = () => {
         try {
           const parsedRecords: SaleRecord[] = (results.data as any[])
             .map((row: any, index: number) => {
-              // 날짜 정규화
+              // 1) 날짜 정규화
               const rawDate = row.date || row.Date || row.날짜 || '';
               const normalizedDate = formatDate(rawDate);
               const dateObj = new Date(normalizedDate);
               const isValidDate = !isNaN(dateObj.getTime());
               const now = new Date();
 
-              // 금액 정규화
-              const sales = parseNumeric(row.sales || row.매출 || '0');
-              const cost = parseNumeric(row.cost || row.지출 || '0');
+              // 2) 금액 정규화
+              const sales = parseNumeric(row.sales ?? row.매출 ?? '0');
+              const cost = parseNumeric(row.cost ?? row.지출 ?? '0');
+
+              // 3) 이름/전화번호 정리 (한/영 헤더 둘 다 대응)
+              const customerName = cleanName(
+                row.customer_name ?? row.고객명 ?? ''
+              );
+              const phone = cleanString(row.phone ?? row.전화번호 ?? '');
 
               return {
                 id: `row-${index}`,
@@ -124,8 +130,8 @@ const App: React.FC = () => {
                 sales,
                 cost,
                 netProfit: sales - cost,
-                customer_name: cleanName(row.customer_name),
-                phone: cleanString(row.phone),
+                customer_name: customerName,
+                phone,
               };
             })
             // 완전 빈 줄 제거
