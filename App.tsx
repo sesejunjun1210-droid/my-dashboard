@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// App.tsx
+import React, { useState } from 'react';
 import Papa from 'papaparse';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -6,7 +7,6 @@ import SalesTable from './components/SalesTable';
 import Analytics from './components/Analytics';
 import { SaleRecord } from './types';
 import { Menu, Search, Bell, Lock, AlertCircle, Loader2 } from 'lucide-react';
-import { GOOGLE_SHEET_FALLBACK_URL } from './constants';
 
 /**
  * ====== 헬퍼 함수들 ======
@@ -36,7 +36,7 @@ const cleanName = (raw?: string | null): string => {
   return beforeBracket.trim();
 };
 
-// 콤마/공백 제거 후 숫자 변환 (190,000 / "- 50,000" 등)
+// 콤마/공백 제거 후 숫자 변환 (190,000 / "-50,000" 등)
 const parseNumeric = (v: any): number => {
   if (v == null) return 0;
   const s = String(v).replace(/[^0-9.-]/g, '').trim();
@@ -51,7 +51,8 @@ const App: React.FC = () => {
   const [loginError, setLoginError] = useState(false);
 
   // Data State
-  const [currentView, setCurrentView] = useState<'dashboard' | 'list' | 'analytics'>('dashboard');
+  const [currentView, setCurrentView] =
+    useState<'dashboard' | 'list' | 'analytics'>('dashboard');
   const [salesData, setSalesData] = useState<SaleRecord[]>([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -68,13 +69,24 @@ const App: React.FC = () => {
     }
   };
 
-  // Data Fetching Logic
+  // Google Sheet 연동
   const fetchData = () => {
     setIsLoading(true);
     setFetchError(null);
 
-    // Env var or fallback 사용
-    const csvUrl = import.meta.env?.VITE_GOOGLE_SHEET_URL || GOOGLE_SHEET_FALLBACK_URL;
+    let csvUrl: string;
+
+    // 1) 로컬 개발 환경 (npm run dev)
+    if (import.meta.env.DEV) {
+      // dev에서는 CORS 프록시 + 원본 시트 URL 사용
+      const RAW_SHEET_URL =
+        'https://docs.google.com/spreadsheets/d/e/2PACX-1vSJIxq1RhvmU98aYusFWpwKcxuPu5c9wyJD2gVEQkx97CO0mThZTWgVi3dcOAiGSr2bupsuA_SqJFzI/pub?output=csv';
+      const PROXY_PREFIX = 'https://cors.isomorphic-git.org/';
+      csvUrl = `${PROXY_PREFIX}${RAW_SHEET_URL}`;
+    } else {
+      // 2) Vercel 배포 환경: 서버리스 함수 사용
+      csvUrl = '/api/sheet';
+    }
 
     Papa.parse(csvUrl, {
       download: true,
@@ -84,49 +96,37 @@ const App: React.FC = () => {
         try {
           const parsedRecords: SaleRecord[] = (results.data as any[])
             .map((row: any, index: number) => {
-              // ---- 1) 날짜 처리 ----
-              // 우선순위: 영문 date → 한글 날짜
+              // 날짜 정규화
               const rawDate = row.date || row.Date || row.날짜 || '';
-              const formattedDate = formatDate(rawDate);
-              const dateObj = new Date(formattedDate);
+              const normalizedDate = formatDate(rawDate);
+              const dateObj = new Date(normalizedDate);
               const isValidDate = !isNaN(dateObj.getTime());
-              const fallback = new Date();
+              const now = new Date();
 
-              const usedDateObj = isValidDate ? dateObj : fallback;
-              const usedDateStr = isValidDate
-                ? formattedDate
-                : fallback.toISOString().split('T')[0];
+              // 금액 정규화
+              const sales = parseNumeric(row.sales || row.매출 || '0');
+              const cost = parseNumeric(row.cost || row.지출 || '0');
 
-              // ---- 2) 숫자 처리 (매출 / 비용) ----
-              const sales = parseNumeric(row.sales ?? row.매출);
-              const cost = parseNumeric(row.cost ?? row.지출);
-
-              // ---- 3) 문자열 컬럼 정리 ----
-              const category = cleanString(row.category);
-              const subCategory = cleanString(row.sub_category);
-              const brand = cleanString(row.brand);
-              const description = cleanString(row.description);
-              const customerName = cleanName(row.customer_name ?? row.고객명);
-              const phone = cleanString(row.phone ?? row.전화번호);
-
-              const record: SaleRecord = {
+              return {
                 id: `row-${index}`,
-                date: usedDateStr,
-                year: usedDateObj.getFullYear(),
-                month: usedDateObj.getMonth() + 1,
-                day: usedDateObj.getDate(),
-                category: category || '기타',
-                sub_category: subCategory || '기타',
-                brand: brand || 'Others',
-                description: description,
+                date: isValidDate
+                  ? normalizedDate
+                  : now.toISOString().split('T')[0],
+                year: isValidDate ? dateObj.getFullYear() : now.getFullYear(),
+                month: isValidDate
+                  ? dateObj.getMonth() + 1
+                  : now.getMonth() + 1,
+                day: isValidDate ? dateObj.getDate() : 1,
+                category: cleanString(row.category) || '기타',
+                sub_category: cleanString(row.sub_category) || '기타',
+                brand: cleanString(row.brand) || 'Others',
+                description: cleanString(row.description),
                 sales,
                 cost,
                 netProfit: sales - cost,
-                customer_name: customerName,
-                phone: phone,
+                customer_name: cleanName(row.customer_name),
+                phone: cleanString(row.phone),
               };
-
-              return record;
             })
             // 완전 빈 줄 제거
             .filter((r) => r.sales !== 0 || r.category !== '');
@@ -141,13 +141,15 @@ const App: React.FC = () => {
       },
       error: (err) => {
         console.error('CSV Fetch Error:', err);
-        setFetchError('데이터를 불러오는데 실패했습니다. Google Sheet URL을 확인해주세요.');
+        setFetchError(
+          '데이터를 불러오는데 실패했습니다. (시트 주소 또는 API 설정을 확인해주세요.)',
+        );
         setIsLoading(false);
       },
     });
   };
 
-  // Login Screen
+  // ================== Login Screen ==================
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900 relative overflow-hidden">
@@ -160,8 +162,12 @@ const App: React.FC = () => {
             <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-900/30 mb-4">
               <Lock className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">ARTIMILANO Admin</h1>
-            <p className="text-slate-400 text-sm mt-2">보안 접속을 위해 암호를 입력하세요.</p>
+            <h1 className="text-2xl font-bold text-white tracking-tight">
+              ARTIMILANO Admin
+            </h1>
+            <p className="text-slate-400 text-sm mt-2">
+              보안 접속을 위해 암호를 입력하세요.
+            </p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
@@ -195,20 +201,24 @@ const App: React.FC = () => {
             </button>
           </form>
           <div className="mt-8 text-center">
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest">Premium Repair Service</p>
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest">
+              Premium Repair Service
+            </p>
           </div>
         </div>
       </div>
     );
   }
 
-  // Fetch Error Screen
+  // ================== Fetch Error Screen ==================
   if (fetchError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center p-8 bg-white rounded-2xl shadow-xl border border-slate-100 max-w-md">
           <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-slate-900 mb-2">데이터 연동 실패</h2>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">
+            데이터 연동 실패
+          </h2>
           <p className="text-slate-500 mb-6 text-sm">{fetchError}</p>
           <button
             onClick={() => window.location.reload()}
@@ -221,7 +231,7 @@ const App: React.FC = () => {
     );
   }
 
-  // Main App
+  // ================== Main App ==================
   return (
     <div className="flex min-h-screen bg-[#f8fafc] font-sans">
       {/* Sidebar for Desktop */}
@@ -238,7 +248,9 @@ const App: React.FC = () => {
             >
               <Menu size={24} />
             </button>
-            <span className="font-bold text-slate-800 tracking-tight">ARTIMILANO</span>
+            <span className="font-bold text-slate-800 tracking-tight">
+              ARTIMILANO
+            </span>
           </div>
 
           <div className="hidden md:flex flex-col">
@@ -249,7 +261,9 @@ const App: React.FC = () => {
                 ? '고객 및 트렌드 분석'
                 : '상세 매출 장부'}
             </h1>
-            <p className="text-xs text-slate-500 font-medium">마스터 장인을 위한 실시간 비즈니스 인사이트</p>
+            <p className="text-xs text-slate-500 font-medium">
+              마스터 장인을 위한 실시간 비즈니스 인사이트
+            </p>
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
@@ -275,14 +289,18 @@ const App: React.FC = () => {
         {isMobileMenuOpen && (
           <div className="md:hidden bg-slate-900 text-white absolute top-[64px] w-full z-40 shadow-xl border-t border-slate-800 animate-in slide-in-from-top-2 duration-200">
             <div className="p-4 border-b border-slate-800">
-              <p className="text-xs text-slate-400 uppercase font-bold mb-2">메뉴 바로가기</p>
+              <p className="text-xs text-slate-400 uppercase font-bold mb-2">
+                메뉴 바로가기
+              </p>
               <button
                 onClick={() => {
                   setCurrentView('dashboard');
                   setIsMobileMenuOpen(false);
                 }}
                 className={`block w-full text-left p-4 rounded-xl mb-2 transition-colors ${
-                  currentView === 'dashboard' ? 'bg-blue-600 font-bold' : 'hover:bg-slate-800 text-slate-300'
+                  currentView === 'dashboard'
+                    ? 'bg-blue-600 font-bold'
+                    : 'hover:bg-slate-800 text-slate-300'
                 }`}
               >
                 경영 현황 (대시보드)
@@ -293,7 +311,9 @@ const App: React.FC = () => {
                   setIsMobileMenuOpen(false);
                 }}
                 className={`block w-full text-left p-4 rounded-xl mb-2 transition-colors ${
-                  currentView === 'analytics' ? 'bg-blue-600 font-bold' : 'hover:bg-slate-800 text-slate-300'
+                  currentView === 'analytics'
+                    ? 'bg-blue-600 font-bold'
+                    : 'hover:bg-slate-800 text-slate-300'
                 }`}
               >
                 고객 및 트렌드 분석
@@ -304,7 +324,9 @@ const App: React.FC = () => {
                   setIsMobileMenuOpen(false);
                 }}
                 className={`block w-full text-left p-4 rounded-xl transition-colors ${
-                  currentView === 'list' ? 'bg-blue-600 font-bold' : 'hover:bg-slate-800 text-slate-300'
+                  currentView === 'list'
+                    ? 'bg-blue-600 font-bold'
+                    : 'hover:bg-slate-800 text-slate-300'
                 }`}
               >
                 상세 매출 장부
@@ -318,7 +340,9 @@ const App: React.FC = () => {
           {isLoading ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/50 backdrop-blur-sm z-50">
               <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
-              <p className="text-slate-600 font-medium">Google Sheet 데이터 동기화 중...</p>
+              <p className="text-slate-600 font-medium">
+                Google Sheet 데이터 동기화 중...
+              </p>
             </div>
           ) : (
             <>
