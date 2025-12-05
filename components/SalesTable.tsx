@@ -1,0 +1,189 @@
+
+import React, { useState } from 'react';
+import { SaleRecord } from '../types';
+import { Search, Download, Filter, TrendingUp, User } from 'lucide-react';
+
+interface SalesTableProps {
+  data: SaleRecord[];
+}
+
+const SalesTable: React.FC<SalesTableProps> = ({ data }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [rowLimit, setRowLimit] = useState(20);
+
+  const sortedData = [...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const filteredData = sortedData.filter(item => {
+    const term = searchTerm.toLowerCase();
+    return (
+      item.description?.toLowerCase().includes(term) || 
+      item.category?.toLowerCase().includes(term) ||
+      item.brand?.toLowerCase().includes(term) ||
+      item.customer_name?.toLowerCase().includes(term) ||
+      item.phone?.includes(term)
+    );
+  });
+
+  const displayData = filteredData.slice(0, rowLimit);
+
+  const getBrandBadge = (brand: string = 'Others') => {
+    const b = brand.toLowerCase();
+    let styleClass = "text-slate-600 bg-slate-100";
+    if (b.includes('chanel') || b.includes('샤넬')) styleClass = "text-white bg-black";
+    else if (b.includes('hermes') || b.includes('에르메스')) styleClass = "text-white bg-orange-600";
+    else if (b.includes('louis') || b.includes('루이비통')) styleClass = "text-white bg-[#8d6e63]";
+    else if (b.includes('dior') || b.includes('디올')) styleClass = "text-slate-800 bg-white border border-slate-200";
+
+    return <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase rounded ${styleClass}`}>{brand === 'Others' ? '기타' : brand}</span>;
+  }
+
+  const exportToCSV = () => {
+     // Simple CSV Export Logic for client side
+     const headers = ["날짜", "카테고리", "브랜드", "내용", "채널", "고객명", "전화번호", "매출", "지출", "순수익"];
+     const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
+        + headers.join(",") + "\n"
+        + filteredData.map(e => {
+            return [
+               e.date, e.category, e.brand, `"${e.description.replace(/"/g, '""')}"`, 
+               e.sub_category, e.customer_name, e.phone, e.sales, e.cost, e.netProfit
+            ].join(",");
+        }).join("\n");
+     
+     const encodedUri = encodeURI(csvContent);
+     const link = document.createElement("a");
+     link.setAttribute("href", encodedUri);
+     link.setAttribute("download", "매출장부_export.csv");
+     document.body.appendChild(link);
+     link.click();
+     document.body.removeChild(link);
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Header Controls */}
+      <div className="p-4 sm:p-6 border-b border-slate-100 flex flex-col lg:flex-row justify-between items-center gap-4 bg-white sticky top-0 z-20">
+        <div className="w-full lg:w-auto text-left">
+           <h3 className="text-lg font-bold text-slate-800">상세 매출 장부</h3>
+           <p className="text-sm text-slate-400">모든 거래 내역을 필터링하고 검색합니다.</p>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+          <div className="relative group flex-1 sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={16} />
+            <input 
+              type="text" 
+              placeholder="검색어 입력..." 
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          <div className="flex gap-2">
+            <button 
+              onClick={exportToCSV}
+              className="flex-1 sm:flex-none justify-center px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-medium flex items-center gap-2 transition-colors shadow-lg shadow-slate-900/10"
+            >
+              <Download size={16} />
+              <span className="inline">엑셀 다운로드</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Table Data */}
+      <div className="overflow-x-auto flex-1 custom-scrollbar">
+        <table className="w-full text-left border-collapse min-w-[1000px]">
+          <thead className="bg-slate-50/50 sticky top-0 z-10 backdrop-blur-sm">
+            <tr className="text-slate-500 text-[11px] uppercase tracking-wider font-bold">
+              <th className="px-6 py-4 border-b border-slate-100 w-24">날짜</th>
+              <th className="px-6 py-4 border-b border-slate-100">브랜드 / 내용</th>
+              <th className="px-6 py-4 border-b border-slate-100">고객 정보</th>
+              <th className="px-6 py-4 border-b border-slate-100 text-center">채널</th>
+              <th className="px-6 py-4 border-b border-slate-100 text-right">매출(Sales)</th>
+              <th className="px-6 py-4 border-b border-slate-100 text-right">비용(Cost)</th>
+              <th className="px-6 py-4 border-b border-slate-100 text-right">순수익(Net)</th>
+            </tr>
+          </thead>
+          <tbody className="text-sm divide-y divide-slate-50">
+            {displayData.length > 0 ? (
+              displayData.map((item) => {
+                const margin = item.sales > 0 ? ((item.netProfit / item.sales) * 100).toFixed(0) : '0';
+                return (
+                  <tr key={item.id} className="hover:bg-blue-50/30 transition-colors group">
+                    <td className="px-6 py-4 text-slate-500 whitespace-nowrap font-medium text-xs font-mono">{item.date}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                           {getBrandBadge(item.brand)}
+                           <span className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{item.category}</span>
+                        </div>
+                        <span className="text-slate-700 font-medium text-sm truncate max-w-[220px]">{item.description}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                         <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                           <User size={12} />
+                         </div>
+                         <div className="flex flex-col">
+                            <span className="text-xs font-bold text-slate-700">{item.customer_name || '미입력'}</span>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                               {item.phone ? item.phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-****-$3') : '-'}
+                            </span>
+                         </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                        item.sub_category === '워크인' ? 'bg-blue-50 text-blue-600' :
+                        item.sub_category === '택배' ? 'bg-purple-50 text-purple-600' :
+                        'bg-slate-100 text-slate-600'
+                      }`}>{item.sub_category}</span>
+                    </td>
+                    <td className="px-6 py-4 text-slate-600 text-right font-mono tracking-tight">
+                      ₩ {item.sales.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 text-rose-400 text-right font-mono tracking-tight text-xs">
+                      {item.cost > 0 ? `- ₩ ${item.cost.toLocaleString()}` : '-'}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                       <div className="flex flex-col items-end">
+                          <span className="font-bold text-slate-900 font-mono">₩ {item.netProfit.toLocaleString()}</span>
+                          <span className={`text-[10px] font-bold ${
+                            Number(margin) >= 50 ? 'text-emerald-500' : 'text-slate-400'
+                          }`}>마진 {margin}%</span>
+                       </div>
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan={7} className="px-6 py-16 text-center">
+                  <div className="flex flex-col items-center justify-center text-slate-400">
+                    <Filter size={32} className="mb-2 opacity-50" />
+                    <p className="text-sm">검색 결과가 없습니다.</p>
+                  </div>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      
+      {filteredData.length > rowLimit && (
+        <div className="p-4 border-t border-slate-100 text-center bg-slate-50/50">
+          <button 
+            onClick={() => setRowLimit(prev => prev + 20)}
+            className="px-6 py-2 bg-white border border-slate-200 text-slate-600 rounded-full text-sm font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
+          >
+            더 보기 ({filteredData.length - rowLimit}건)
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default SalesTable;
