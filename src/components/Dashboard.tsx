@@ -33,7 +33,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { SaleRecord } from '../../types';
-import StatCard from './StatCard';
+import StatCard from "./StatCard";
 
 interface DashboardProps {
   data: SaleRecord[];

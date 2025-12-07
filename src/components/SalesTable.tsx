@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { SaleRecord } from '../../types';
+import { SaleRecord } from '../types';
 import { Search, Download, Filter, User } from 'lucide-react';
 
 interface SalesTableProps {
