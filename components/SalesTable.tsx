@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { SaleRecord } from '../types';
-import { Search, Download, Filter, TrendingUp, User } from 'lucide-react';
+import { Search, Download, Filter, User } from 'lucide-react';
 
 interface SalesTableProps {
   data: SaleRecord[];
@@ -38,7 +37,6 @@ const SalesTable: React.FC<SalesTableProps> = ({ data }) => {
   }
 
   const exportToCSV = () => {
-     // Simple CSV Export Logic for client side
      const headers = ["날짜", "카테고리", "브랜드", "내용", "채널", "고객명", "전화번호", "매출", "지출", "순수익"];
      const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
         + headers.join(",") + "\n"
@@ -61,14 +59,14 @@ const SalesTable: React.FC<SalesTableProps> = ({ data }) => {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header Controls */}
-      <div className="p-4 sm:p-6 border-b border-slate-100 flex flex-col lg:flex-row justify-between items-center gap-4 bg-white sticky top-0 z-20">
+      <div className="p-4 sm:p-6 border-b border-slate-100 flex flex-col lg:flex-row justify-between items-start sm:items-center gap-4 bg-white sticky top-0 z-20">
         <div className="w-full lg:w-auto text-left">
            <h3 className="text-lg font-bold text-slate-800">상세 매출 장부</h3>
            <p className="text-sm text-slate-400">모든 거래 내역을 필터링하고 검색합니다.</p>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-          <div className="relative group flex-1 sm:w-64">
+        <div className="flex flex-wrap gap-3 w-full lg:w-auto">
+          <div className="relative group flex-1 min-w-[200px] lg:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={16} />
             <input 
               type="text" 
@@ -79,15 +77,14 @@ const SalesTable: React.FC<SalesTableProps> = ({ data }) => {
             />
           </div>
           
-          <div className="flex gap-2">
-            <button 
-              onClick={exportToCSV}
-              className="flex-1 sm:flex-none justify-center px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-medium flex items-center gap-2 transition-colors shadow-lg shadow-slate-900/10"
-            >
-              <Download size={16} />
-              <span className="inline">엑셀 다운로드</span>
-            </button>
-          </div>
+          <button 
+            onClick={exportToCSV}
+            className="flex-shrink-0 justify-center px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-medium flex items-center gap-2 transition-colors shadow-lg shadow-slate-900/10"
+          >
+            <Download size={16} />
+            <span className="hidden sm:inline">엑셀 다운로드</span>
+            <span className="sm:hidden">CSV</span>
+          </button>
         </div>
       </div>
 
