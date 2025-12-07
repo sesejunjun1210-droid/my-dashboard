@@ -32,7 +32,7 @@ import {
   Cloud,
   TrendingUp
 } from 'lucide-react';
-import { SaleRecord } from '../types';
+import { SaleRecord } from '../../types';
 import StatCard from './StatCard';
 
 interface DashboardProps {

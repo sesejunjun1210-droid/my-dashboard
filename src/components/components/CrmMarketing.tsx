@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState } from 'react';
-import { SaleRecord, CustomerStats } from '../types';
+import { SaleRecord, CustomerStats } from '../../types';
 import {
   Users,
   Activity,

@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
-import { SaleRecord } from '../types';
+import { SaleRecord } from '../../types';
 import { processCSVData } from '../services/dataService';
 
 interface FileUploaderProps {

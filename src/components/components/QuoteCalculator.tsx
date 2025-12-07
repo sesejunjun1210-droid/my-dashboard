@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { SaleRecord } from '../types';
+import { SaleRecord } from '../../types';
 import { 
   Search, 
   Calculator, 

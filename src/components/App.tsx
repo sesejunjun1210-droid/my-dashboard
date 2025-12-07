@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import Papa from 'papaparse';
+
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import SalesTable from './components/SalesTable';
 import Analytics from './components/Analytics';
+
 import { SaleRecord } from './types';
-import { Menu, Search, Bell, Lock, AlertCircle, Loader2 } from 'lucide-react';
 import { GOOGLE_SHEET_FALLBACK_URL } from './constants';
+
+import { Menu, Search, Bell, Lock, AlertCircle, Loader2 } from 'lucide-react';
 
 /**
  * ====== 헬퍼 함수들 ======

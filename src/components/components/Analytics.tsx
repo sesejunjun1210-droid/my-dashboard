@@ -15,7 +15,7 @@ import {
   Line,
   Legend
 } from 'recharts';
-import { SaleRecord, AggregatedMetric } from '../types';
+import { SaleRecord, AggregatedMetric } from '../../types';
 import {
   TrendingUp,
   Activity,
