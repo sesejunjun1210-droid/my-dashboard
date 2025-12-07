@@ -88,9 +88,20 @@ const App: React.FC = () => {
     setIsLoading(true);
     setFetchError(null);
 
-    // .env에 VITE_GOOGLE_SHEET_URL 있으면 우선 사용, 없으면 상수 fallback
+    // .env 에 VITE_GOOGLE_SHEET_URL 이 있으면 우선 사용하고,
+    // 없거나 이상하면 constants.ts 의 GOOGLE_SHEET_FALLBACK_URL 사용
+    const envUrl = (import.meta as any)?.env?.VITE_GOOGLE_SHEET_URL as string | undefined;
     const csvUrl =
-      (import.meta as any)?.env?.VITE_GOOGLE_SHEET_URL || GOOGLE_SHEET_FALLBACK_URL;
+      (envUrl && envUrl.startsWith('http') ? envUrl : GOOGLE_SHEET_FALLBACK_URL) || '';
+
+    if (!csvUrl) {
+      setFetchError('Google Sheet URL이 설정되지 않았습니다. .env 또는 constants.ts를 확인해주세요.');
+      setIsLoading(false);
+      return;
+    }
+
+    // 디버깅용 (배포 후 필요 없으면 삭제 가능)
+    console.log('[DEBUG] csvUrl:', csvUrl);
 
     Papa.parse(csvUrl, {
       download: true,
