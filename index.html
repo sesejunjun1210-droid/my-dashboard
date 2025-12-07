@@ -1,15 +1,23 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ARTIMILANO - Premium Repair Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Tailwind CDN (지금처럼 클래스만 쓰는 용도면 그대로 둬도 됨, 경고만 나옴) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
     <style>
       body {
         font-family: 'Inter', sans-serif;
         background-color: #f8fafc;
+        margin: 0;
       }
       .custom-scrollbar::-webkit-scrollbar {
         height: 6px;
@@ -26,20 +34,11 @@
         background: #94a3b8;
       }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "react/": "https://aistudiocdn.com/react@^19.2.1/",
-    "react": "https://aistudiocdn.com/react@^19.2.1",
-    "recharts": "https://aistudiocdn.com/recharts@^3.5.1",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
-    "papaparse": "https://aistudiocdn.com/papaparse@^5.5.3"
-  }
-}
-</script>
-</head>
+  </head>
   <body>
     <div id="root"></div>
+
+    <!-- ✅ 여기서부터가 핵심: Vite가 번들한 React 앱을 실행 -->
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
