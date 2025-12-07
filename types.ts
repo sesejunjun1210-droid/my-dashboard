@@ -1,30 +1,18 @@
-export enum Status {
-  RELEASED = '출고',
-  IN_PROGRESS = '작업중',
-  BEFORE_WORK = '작업전',
-  UNKNOWN = '미정'
-}
-
-// Google Sheet Columns Structure:
-// date | category | sub_category | brand | description | sales | cost | customer_name | phone
-
 export interface SaleRecord {
   id: string;
   date: string; // YYYY-MM-DD
-  category: string; // 수선, 염색, 리폼
-  sub_category: string; // 워크인, 택배 등 (Channel)
+  year: number;
+  month: number;
+  day: number;
+  category: string;
   brand: string;
-  description: string; // 비고
-  sales: number; // 매출 (Gross)
-  cost: number; // 지출/외주비
-  netProfit: number; // sales - cost (Calculated)
+  description: string;
+  sub_category: string; // Channel (Walk-in, Delivery, etc.)
   customer_name: string;
   phone: string;
-  
-  // Backward compatibility / UI helpers
-  day: number;
-  month: number;
-  year: number;
+  sales: number;
+  cost: number;
+  netProfit: number;
 }
 
 export interface CustomerStats {
@@ -33,4 +21,16 @@ export interface CustomerStats {
   visitCount: number;
   totalSpend: number;
   lastVisit: string;
+}
+
+export interface AggregatedMetric {
+  id: string;
+  name: string;
+  count: number;
+  revenue: number;
+  profit: number;
+  asp: number;
+  margin: number;
+  reworkCount: number;
+  reworkRate: number;
 }

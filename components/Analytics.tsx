@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import {
   XAxis,
@@ -191,35 +192,6 @@ const Analytics: React.FC<AnalyticsProps> = ({ data }) => {
 
     // B. Build Cohort Grid
     // Cohorts: Rows (First Visit Month), Columns: Months Since First Visit (0, 1, 2...)
-    const cohorts: Record<string, { total: number, retention: Record<number, number> }> = {};
-
-    sortedByDate.forEach(d => {
-        if (!d.phone || d.phone.length < 8) return;
-        const cleanPhone = d.phone.replace(/[^0-9]/g, '');
-        const cohortMonth = firstVisitMap.get(cleanPhone);
-        if (!cohortMonth) return;
-
-        const visitMonth = `${d.year}-${String(d.month).padStart(2, '0')}`;
-        
-        // Initialize cohort row
-        if (!cohorts[cohortMonth]) {
-            cohorts[cohortMonth] = { total: 0, retention: {} };
-        }
-
-        // Helper to calculate month difference
-        const getMonthDiff = (d1: Date, d2: Date) => {
-            return (d2.getFullYear() - d1.getFullYear()) * 12 + (d2.getMonth() - d1.getMonth());
-        };
-
-        const cDate = new Date(cohortMonth + "-01");
-        const vDate = new Date(visitMonth + "-01");
-        const diff = getMonthDiff(cDate, vDate);
-
-        // Count UNIQUE customers per cohort per month-offset
-        // To do this strictly, we'd need sets. For simplicity, we assume one visit per month per customer or re-process.
-        // Let's use a temporary Set structure for accuracy.
-    });
-
     // Re-processing for accurate unique counts
     const cohortSets: Record<string, { total: Set<string>, retention: Record<number, Set<string>> }> = {};
     
