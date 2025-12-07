@@ -1,4 +1,3 @@
-// App.tsx
 import React, { useState } from 'react';
 import Papa from 'papaparse';
 import Sidebar from './components/Sidebar';
@@ -7,6 +6,7 @@ import SalesTable from './components/SalesTable';
 import Analytics from './components/Analytics';
 import { SaleRecord } from './types';
 import { Menu, Search, Bell, Lock, AlertCircle, Loader2 } from 'lucide-react';
+import { GOOGLE_SHEET_FALLBACK_URL } from './constants';
 
 /**
  * ====== 헬퍼 함수들 ======
@@ -20,26 +20,28 @@ const cleanString = (value?: string | null): string => {
 
 // 날짜에서 연/월/일만 뽑기
 // 예) "2024. 11. 1", "2024-11-01", "2024/11/01", "2024년 11월 1일"
-// 전부 다: year=2024, month=11, day=1 로 강제 파싱
 const parseDateParts = (raw?: string | null) => {
   const v = cleanString(raw);
   if (!v) return null;
 
-  // "2024 무언가 11 무언가 1" 패턴만 잡으면 됨
+  // "2024무언가11무언가1" 패턴
   const m = v.match(/^(\d{4})\D+(\d{1,2})\D+(\d{1,2})?/);
   if (!m) return null;
 
   const year = Number(m[1]);
   const month = Number(m[2]);
   const day = m[3] ? Number(m[3]) : 1;
-
   if (!year || !month) return null;
 
   const mm = String(month).padStart(2, '0');
   const dd = String(day).padStart(2, '0');
-  const display = `${year}-${mm}-${dd}`; // "2024-11-01"
 
-  return { year, month, day, display };
+  return {
+    year,
+    month,
+    day,
+    display: `${year}-${mm}-${dd}`, // "YYYY-MM-DD"
+  };
 };
 
 // "김수아 [C / 수아]" → "김수아"
@@ -54,7 +56,7 @@ const parseNumeric = (v: any): number => {
   if (v == null) return 0;
   const s = String(v).replace(/[^0-9.-]/g, '').trim();
   const n = Number(s);
-  return isNaN(n) ? 0 : n;
+  return Number.isNaN(n) ? 0 : n;
 };
 
 const App: React.FC = () => {
@@ -64,8 +66,7 @@ const App: React.FC = () => {
   const [loginError, setLoginError] = useState(false);
 
   // Data State
-  const [currentView, setCurrentView] =
-    useState<'dashboard' | 'list' | 'analytics'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'list' | 'analytics'>('dashboard');
   const [salesData, setSalesData] = useState<SaleRecord[]>([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -87,19 +88,9 @@ const App: React.FC = () => {
     setIsLoading(true);
     setFetchError(null);
 
-    let csvUrl: string;
-
-    // 1) 로컬 개발 환경 (npm run dev)
-    if (import.meta.env.DEV) {
-      // dev에서는 CORS 프록시 + 원본 시트 URL 사용
-      const RAW_SHEET_URL =
-        'https://docs.google.com/spreadsheets/d/e/2PACX-1vSJIxq1RhvmU98aYusFWpwKcxuPu5c9wyJD2gVEQkx97CO0mThZTWgVi3dcOAiGSr2bupsuA_SqJFzI/pub?output=csv';
-      const PROXY_PREFIX = 'https://cors.isomorphic-git.org/';
-      csvUrl = `${PROXY_PREFIX}${RAW_SHEET_URL}`;
-    } else {
-      // 2) Vercel 배포 환경: 서버리스 함수 사용
-      csvUrl = '/api/sheet';
-    }
+    // .env에 VITE_GOOGLE_SHEET_URL 있으면 우선 사용, 없으면 상수 fallback
+    const csvUrl =
+      (import.meta as any)?.env?.VITE_GOOGLE_SHEET_URL || GOOGLE_SHEET_FALLBACK_URL;
 
     Papa.parse(csvUrl, {
       download: true,
@@ -107,44 +98,69 @@ const App: React.FC = () => {
       skipEmptyLines: true,
       complete: (results) => {
         try {
+          const now = new Date();
+
           const parsedRecords: SaleRecord[] = (results.data as any[])
             .map((row: any, index: number) => {
               // 1) 날짜 파싱
-              const rawDate = row.date || row.Date || row.날짜 || '';
+              const rawDate =
+                row.date || row.Date || row.날짜 || row['DATE'] || row['date'] || '';
               const dateParts = parseDateParts(rawDate);
-              if (!dateParts) {
-                // 날짜 완전 이상하면 이 행 버림
-                return null;
-              }
-              const { year, month, day, display } = dateParts;
+
+              const fallbackDisplay = now.toISOString().split('T')[0];
+              const year = dateParts?.year ?? now.getFullYear();
+              const month = dateParts?.month ?? now.getMonth() + 1;
+              const day = dateParts?.day ?? now.getDate();
+              const display = dateParts?.display ?? fallbackDisplay;
+
+              const dateObj = new Date(display);
+              const isValidDate = !Number.isNaN(dateObj.getTime());
 
               // 2) 금액 파싱 (F열: 매출, G열: 외주비)
-              const sales = parseNumeric(row.sales || row.매출 || '0');
-              const cost = parseNumeric(row.cost || row.지출 || '0');
+              const sales = parseNumeric(row.sales || row.매출 || row['sales'] || '0');
+
+              // 시트에서는 "-170,000" 같이 음수로 들어와도,
+              // 코드 내부 cost는 "지출액 양수"로 저장
+              const rawCost = parseNumeric(row.cost || row.지출 || row['cost'] || '0');
+              const cost = Math.abs(rawCost);
+
+              // 3) 고객명 정리 ("김수아\n[C / 수아]" → "김수아")
+              let name = row.customer_name || row['customer_name'] || row['고객명'] || '';
+              name = String(name);
+              if (name.includes('\n')) name = name.split('\n')[0];
+              name = name.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').trim();
+              name = cleanName(name);
+
+              // 4) 전화번호
+              const phone = cleanString(row.phone || row['phone'] || row['전화번호']);
 
               return {
                 id: `row-${index}`,
-                date: display, // "YYYY-MM-DD"
+                date: isValidDate ? display : fallbackDisplay,
                 year,
                 month,
-                day,
-                category: cleanString(row.category) || '기타',
-                sub_category: cleanString(row.sub_category) || '기타',
-                brand: cleanString(row.brand) || 'Others',
-                description: cleanString(row.description),
+                day: isValidDate ? day : 1,
+                category: cleanString(row.category || row['category'] || row['카테고리']) || '기타',
+                sub_category:
+                  cleanString(
+                    row.sub_category ||
+                      row['sub_category'] ||
+                      row['subCategory'] ||
+                      row['세부'] ||
+                      row['세부유형'],
+                  ) || '기타',
+                brand: cleanString(row.brand || row['brand'] || row['브랜드']) || 'Others',
+                description: cleanString(row.description || row['description'] || row['비고']),
                 sales,
-                cost,
-                // ★ 순이익 = 매출(F) + 외주비(G, 시트에서 -50,000 형태라고 하셨으니 그대로 더함)
-                netProfit: sales + cost,
-                customer_name: cleanName(row.customer_name),
-                phone: cleanString(row.phone),
-              };
+                cost, // 양수 지출
+                // 순이익 = 매출 - 지출
+                netProfit: sales - cost,
+                customer_name: name,
+                phone,
+              } as SaleRecord;
             })
-            // null(날짜 이상) 제거 + 완전 빈 줄 제거
-            .filter(
-              (r): r is SaleRecord =>
-                !!r && (r.sales !== 0 || r.category !== ''),
-            );
+            // null 제거 + 완전 빈 줄 제거
+            .filter((r) => !!r && (r.sales !== 0 || r.category !== ''));
 
           setSalesData(parsedRecords);
         } catch (err) {
@@ -156,9 +172,7 @@ const App: React.FC = () => {
       },
       error: (err) => {
         console.error('CSV Fetch Error:', err);
-        setFetchError(
-          '데이터를 불러오는데 실패했습니다. (시트 주소 또는 API 설정을 확인해주세요.)',
-        );
+        setFetchError('데이터를 불러오는데 실패했습니다. Google Sheet URL을 확인해주세요.');
         setIsLoading(false);
       },
     });
@@ -180,9 +194,7 @@ const App: React.FC = () => {
             <h1 className="text-2xl font-bold text-white tracking-tight">
               ARTIMILANO Admin
             </h1>
-            <p className="text-slate-400 text-sm mt-2">
-              보안 접속을 위해 암호를 입력하세요.
-            </p>
+            <p className="text-slate-400 text-sm mt-2">보안 접속을 위해 암호를 입력하세요.</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
@@ -215,6 +227,7 @@ const App: React.FC = () => {
               대시보드 접속
             </button>
           </form>
+
           <div className="mt-8 text-center">
             <p className="text-[10px] text-slate-500 uppercase tracking-widest">
               Premium Repair Service
@@ -231,9 +244,7 @@ const App: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center p-8 bg-white rounded-2xl shadow-xl border border-slate-100 max-w-md">
           <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-slate-900 mb-2">
-            데이터 연동 실패
-          </h2>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">데이터 연동 실패</h2>
           <p className="text-slate-500 mb-6 text-sm">{fetchError}</p>
           <button
             onClick={() => window.location.reload()}
@@ -263,9 +274,7 @@ const App: React.FC = () => {
             >
               <Menu size={24} />
             </button>
-            <span className="font-bold text-slate-800 tracking-tight">
-              ARTIMILANO
-            </span>
+            <span className="font-bold text-slate-800 tracking-tight">ARTIMILANO</span>
           </div>
 
           <div className="hidden md:flex flex-col">
@@ -304,9 +313,7 @@ const App: React.FC = () => {
         {isMobileMenuOpen && (
           <div className="md:hidden bg-slate-900 text-white absolute top-[64px] w-full z-40 shadow-xl border-t border-slate-800 animate-in slide-in-from-top-2 duration-200">
             <div className="p-4 border-b border-slate-800">
-              <p className="text-xs text-slate-400 uppercase font-bold mb-2">
-                메뉴 바로가기
-              </p>
+              <p className="text-xs text-slate-400 uppercase font-bold mb-2">메뉴 바로가기</p>
               <button
                 onClick={() => {
                   setCurrentView('dashboard');
@@ -355,9 +362,7 @@ const App: React.FC = () => {
           {isLoading ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/50 backdrop-blur-sm z-50">
               <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
-              <p className="text-slate-600 font-medium">
-                Google Sheet 데이터 동기화 중...
-              </p>
+              <p className="text-slate-600 font-medium">Google Sheet 데이터 동기화 중...</p>
             </div>
           ) : (
             <>
