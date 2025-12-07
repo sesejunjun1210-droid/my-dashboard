@@ -1,8 +1,7 @@
-
 import React, { useState, useCallback } from 'react';
 import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import { SaleRecord } from '../types';
-import { parseCustomCSV } from '../constants';
+import { processCSVData } from '../services/dataService';
 
 interface FileUploaderProps {
   onDataLoaded: (data: SaleRecord[]) => void;
@@ -13,15 +12,15 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onDataLoaded }) => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     setLoading(true);
     setError(null);
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const text = e.target?.result as string;
-        const parsedData = parseCustomCSV(text);
+        const parsedData = await processCSVData(text);
         if (parsedData.length === 0) {
           setError("유효한 데이터가 없습니다. 파일 내용을 확인해주세요.");
         } else {
@@ -63,7 +62,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onDataLoaded }) => {
         
         <h2 className="text-2xl font-bold text-slate-800 mb-3">매출 장부 파일 업로드</h2>
         <p className="text-slate-500 mb-8 leading-relaxed">
-          가지고 계신 <strong>1년 6개월치 엑셀(CSV) 파일</strong>을 이곳에 끌어다 놓으세요.<br/>
+          가지고 계신 <strong>엑셀(CSV) 파일</strong>을 이곳에 끌어다 놓으세요.<br/>
           복잡한 형식이여도 자동으로 분석하여 대시보드로 변환합니다.
         </p>
 

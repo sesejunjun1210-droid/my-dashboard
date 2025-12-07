@@ -66,7 +66,8 @@ const App: React.FC = () => {
   const [loginError, setLoginError] = useState(false);
 
   // Data State
-  const [currentView, setCurrentView] = useState<'dashboard' | 'list' | 'analytics'>('dashboard');
+  const [currentView, setCurrentView] =
+    useState<'dashboard' | 'list' | 'analytics'>('dashboard');
   const [salesData, setSalesData] = useState<SaleRecord[]>([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -90,12 +91,16 @@ const App: React.FC = () => {
 
     // .env 에 VITE_GOOGLE_SHEET_URL 이 있으면 우선 사용하고,
     // 없거나 이상하면 constants.ts 의 GOOGLE_SHEET_FALLBACK_URL 사용
-    const envUrl = (import.meta as any)?.env?.VITE_GOOGLE_SHEET_URL as string | undefined;
+    const envUrl = (import.meta as any)?.env?.VITE_GOOGLE_SHEET_URL as
+      | string
+      | undefined;
     const csvUrl =
       (envUrl && envUrl.startsWith('http') ? envUrl : GOOGLE_SHEET_FALLBACK_URL) || '';
 
     if (!csvUrl) {
-      setFetchError('Google Sheet URL이 설정되지 않았습니다. .env 또는 constants.ts를 확인해주세요.');
+      setFetchError(
+        'Google Sheet URL이 설정되지 않았습니다. .env 또는 constants.ts를 확인해주세요.'
+      );
       setIsLoading(false);
       return;
     }
@@ -115,7 +120,12 @@ const App: React.FC = () => {
             .map((row: any, index: number) => {
               // 1) 날짜 파싱
               const rawDate =
-                row.date || row.Date || row.날짜 || row['DATE'] || row['date'] || '';
+                row.date ||
+                row.Date ||
+                row.날짜 ||
+                row['DATE'] ||
+                row['date'] ||
+                '';
               const dateParts = parseDateParts(rawDate);
 
               const fallbackDisplay = now.toISOString().split('T')[0];
@@ -128,22 +138,35 @@ const App: React.FC = () => {
               const isValidDate = !Number.isNaN(dateObj.getTime());
 
               // 2) 금액 파싱 (F열: 매출, G열: 외주비)
-              const sales = parseNumeric(row.sales || row.매출 || row['sales'] || '0');
+              const sales = parseNumeric(
+                row.sales || row.매출 || row['sales'] || '0'
+              );
 
               // 시트에서는 "-170,000" 같이 음수로 들어와도,
               // 코드 내부 cost는 "지출액 양수"로 저장
-              const rawCost = parseNumeric(row.cost || row.지출 || row['cost'] || '0');
+              const rawCost = parseNumeric(
+                row.cost || row.지출 || row['cost'] || '0'
+              );
               const cost = Math.abs(rawCost);
 
               // 3) 고객명 정리 ("김수아\n[C / 수아]" → "김수아")
-              let name = row.customer_name || row['customer_name'] || row['고객명'] || '';
+              let name =
+                row.customer_name ||
+                row['customer_name'] ||
+                row['고객명'] ||
+                '';
               name = String(name);
               if (name.includes('\n')) name = name.split('\n')[0];
-              name = name.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').trim();
+              name = name
+                .replace(/\[.*?\]/g, '')
+                .replace(/\(.*?\)/g, '')
+                .trim();
               name = cleanName(name);
 
               // 4) 전화번호
-              const phone = cleanString(row.phone || row['phone'] || row['전화번호']);
+              const phone = cleanString(
+                row.phone || row['phone'] || row['전화번호']
+              );
 
               return {
                 id: `row-${index}`,
@@ -151,17 +174,24 @@ const App: React.FC = () => {
                 year,
                 month,
                 day: isValidDate ? day : 1,
-                category: cleanString(row.category || row['category'] || row['카테고리']) || '기타',
+                category:
+                  cleanString(
+                    row.category || row['category'] || row['카테고리']
+                  ) || '기타',
                 sub_category:
                   cleanString(
                     row.sub_category ||
                       row['sub_category'] ||
                       row['subCategory'] ||
                       row['세부'] ||
-                      row['세부유형'],
+                      row['세부유형']
                   ) || '기타',
-                brand: cleanString(row.brand || row['brand'] || row['브랜드']) || 'Others',
-                description: cleanString(row.description || row['description'] || row['비고']),
+                brand:
+                  cleanString(row.brand || row['brand'] || row['브랜드']) ||
+                  'Others',
+                description: cleanString(
+                  row.description || row['description'] || row['비고']
+                ),
                 sales,
                 cost, // 양수 지출
                 // 순이익 = 매출 - 지출
@@ -183,7 +213,9 @@ const App: React.FC = () => {
       },
       error: (err) => {
         console.error('CSV Fetch Error:', err);
-        setFetchError('데이터를 불러오는데 실패했습니다. Google Sheet URL을 확인해주세요.');
+        setFetchError(
+          '데이터를 불러오는데 실패했습니다. Google Sheet URL을 확인해주세요.'
+        );
         setIsLoading(false);
       },
     });
@@ -192,20 +224,22 @@ const App: React.FC = () => {
   // ================== Login Screen ==================
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900 relative overflow-hidden">
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 relative overflow-hidden px-4">
         {/* Background Effects */}
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/20 rounded-full blur-[120px]" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-amber-600/10 rounded-full blur-[120px]" />
 
-        <div className="bg-white/10 backdrop-blur-xl p-8 sm:p-12 rounded-3xl shadow-2xl border border-white/10 w-full max-w-md relative z-10 animate-in fade-in zoom-in duration-500">
+        <div className="bg-white/10 backdrop-blur-xl p-6 sm:p-12 rounded-3xl shadow-2xl border border-white/10 w-full max-w-md relative z-10 animate-in fade-in zoom-in duration-500">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-900/30 mb-4">
-              <Lock className="w-8 h-8 text-white" />
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-900/30 mb-4">
+              <Lock className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
               ARTIMILANO Admin
             </h1>
-            <p className="text-slate-400 text-sm mt-2">보안 접속을 위해 암호를 입력하세요.</p>
+            <p className="text-slate-400 text-xs sm:text-sm mt-2">
+              보안 접속을 위해 암호를 입력하세요.
+            </p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
@@ -252,14 +286,18 @@ const App: React.FC = () => {
   // ================== Fetch Error Screen ==================
   if (fetchError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center p-8 bg-white rounded-2xl shadow-xl border border-slate-100 max-w-md">
-          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-slate-900 mb-2">데이터 연동 실패</h2>
-          <p className="text-slate-500 mb-6 text-sm">{fetchError}</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+        <div className="text-center p-6 sm:p-8 bg-white rounded-2xl shadow-xl border border-slate-100 max-w-md w-full">
+          <AlertCircle className="w-10 h-10 sm:w-12 sm:h-12 text-rose-500 mx-auto mb-4" />
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-2">
+            데이터 연동 실패
+          </h2>
+          <p className="text-slate-500 mb-6 text-sm break-keep">
+            {fetchError}
+          </p>
           <button
             onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800"
+            className="px-6 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 w-full sm:w-auto"
           >
             다시 시도
           </button>
@@ -270,22 +308,24 @@ const App: React.FC = () => {
 
   // ================== Main App ==================
   return (
-    <div className="flex min-h-screen bg-[#f8fafc] font-sans">
+    <div className="flex min-h-screen bg-[#f8fafc] font-sans overflow-x-hidden">
       {/* Sidebar for Desktop */}
       <Sidebar currentView={currentView} onNavigate={setCurrentView} />
 
       {/* Main Content */}
-      <div className="flex-1 md:ml-72 transition-all duration-300 flex flex-col min-h-screen">
+      <div className="flex-1 md:ml-72 transition-all duration-300 flex flex-col min-h-screen w-full">
         {/* Top Header Bar */}
-        <header className="bg-white/80 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200/60 px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4 md:hidden">
+        <header className="bg-white/80 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200/60 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3 md:hidden">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+              className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg active:bg-slate-200"
             >
               <Menu size={24} />
             </button>
-            <span className="font-bold text-slate-800 tracking-tight">ARTIMILANO</span>
+            <span className="font-bold text-slate-800 tracking-tight text-lg">
+              ARTIMILANO
+            </span>
           </div>
 
           <div className="hidden md:flex flex-col">
@@ -301,7 +341,7 @@ const App: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <div className="hidden md:flex items-center bg-slate-100/50 rounded-full px-4 py-2 border border-slate-200 focus-within:ring-2 ring-blue-500/20 focus-within:border-blue-500 transition-all">
               <Search size={16} className="text-slate-400" />
               <input
@@ -311,7 +351,7 @@ const App: React.FC = () => {
               />
             </div>
             <button className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors">
-              <Bell size={22} />
+              <Bell className="w-5 h-5 sm:w-[22px] sm:h-[22px]" />
               <span className="absolute top-1.5 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
             </button>
             <div className="w-8 h-8 rounded-full bg-slate-700 border-2 border-white shadow-sm flex items-center justify-center text-xs text-white font-bold md:hidden">
@@ -322,9 +362,11 @@ const App: React.FC = () => {
 
         {/* Mobile Menu Dropdown */}
         {isMobileMenuOpen && (
-          <div className="md:hidden bg-slate-900 text-white absolute top-[64px] w-full z-40 shadow-xl border-t border-slate-800 animate-in slide-in-from-top-2 duration-200">
+          <div className="md:hidden bg-slate-900 text-white fixed top-[60px] left-0 w-full z-40 shadow-xl border-t border-slate-800 animate-in slide-in-from-top-2 duration-200">
             <div className="p-4 border-b border-slate-800">
-              <p className="text-xs text-slate-400 uppercase font-bold mb-2">메뉴 바로가기</p>
+              <p className="text-xs text-slate-400 uppercase font-bold mb-2">
+                메뉴 바로가기
+              </p>
               <button
                 onClick={() => {
                   setCurrentView('dashboard');
@@ -373,7 +415,9 @@ const App: React.FC = () => {
           {isLoading ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/50 backdrop-blur-sm z-50">
               <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
-              <p className="text-slate-600 font-medium">Google Sheet 데이터 동기화 중...</p>
+              <p className="text-slate-600 font-medium">
+                Google Sheet 데이터 동기화 중...
+              </p>
             </div>
           ) : (
             <>
