@@ -37,6 +37,22 @@ export const analyzeCustomer = (
     // Monetary: Average Order Value
 
 
+    // 2.5 Contextual Keyword Extraction (Preferred Category)
+    const categoryCount: Record<string, number> = {};
+    records.forEach(r => {
+        const cat = r.category || r.description.split(' ')[0] || '기타';
+        categoryCount[cat] = (categoryCount[cat] || 0) + 1;
+    });
+    // Find mode
+    let preferredCategory = '방문';
+    let maxCount = 0;
+    Object.entries(categoryCount).forEach(([cat, count]) => {
+        if (count > maxCount) {
+            maxCount = count;
+            preferredCategory = cat;
+        }
+    });
+
     // 3. Scoring Logic (Simple Heuristic for now, can be ML later)
     let score = 0;
     const reasons: string[] = [];
@@ -106,6 +122,7 @@ export const analyzeCustomer = (
         churnProbability: finalChurn,
         nextPurchasePrediction: nextPurchase,
         reasons: [...new Set(reasons)], // Dedup reasons
+        preferredCategory,
         // Placeholders (Will be overwritten by calculateRetentionMetrics)
         clv: 0,
         avgInterPurchaseTime: 0,

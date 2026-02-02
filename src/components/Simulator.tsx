@@ -190,91 +190,108 @@ const Simulator: React.FC<SimulatorProps> = ({ data }) => {
                         원본 데이터(스프레드시트)는 변경되지 않습니다.
                     </p>
                 </div>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => {
+                            setPriceIncrease(0);
+                            setChurnReduction(0);
+                            setNewCustomerGrowth(0);
+                            setCostReduction(0);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-200 transition-colors"
+                    >
+                        <RefreshCcw size={16} />
+                        초기화
+                    </button>
+                    <button onClick={saveScenario} className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-md hover:bg-slate-800 transition-colors">
+                        <TrendingUp size={16} />
+                        시나리오 저장
+                    </button>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left Column: Controls & Intelligence */}
-                <div className="lg:col-span-4 space-y-6">
-                    {/* 1. Variable Controls */}
-                    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <div className="lg:col-span-1 space-y-6">
+                    {/* Controls */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                         <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                            🎛️ 변수 설정 (Variables)
+                            <Calculator size={18} className="text-blue-600" />
+                            성장 동인 설정 (Growth Drivers)
                         </h3>
 
                         <div className="space-y-8">
                             {/* Price Increase */}
                             <div>
-                                <div className="flex justify-between mb-2">
-                                    <label className="text-sm font-bold text-slate-700">단가 인상률 (Price)</label>
-                                    <span className="text-sm font-mono font-bold text-blue-600">+{priceIncrease}%</span>
+                                <div className="flex justify-between items-center mb-2">
+                                    <label className="text-sm font-bold text-slate-700">가격 인상률 (Price Increase)</label>
+                                    <span className="text-sm font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{priceIncrease}%</span>
                                 </div>
                                 <input
-                                    type="range" min="0" max="30" step="1"
+                                    type="range"
+                                    min="0"
+                                    max="50"
+                                    step="1"
                                     value={priceIncrease}
                                     onChange={(e) => setPriceIncrease(Number(e.target.value))}
-                                    className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                                 />
-                                <p className="text-xs text-slate-400 mt-1">평균 객단가 상승 효과</p>
-                            </div>
-
-                            {/* Churn Reduction */}
-                            <div>
-                                <div className="flex justify-between mb-2">
-                                    <label className="text-sm font-bold text-slate-700">단골 유지율 개선 (Retention)</label>
-                                    <span className="text-sm font-mono font-bold text-emerald-600">+{churnReduction}%</span>
-                                </div>
-                                <input
-                                    type="range" min="0" max="20" step="1"
-                                    value={churnReduction}
-                                    onChange={(e) => setChurnReduction(Number(e.target.value))}
-                                    className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-emerald-600"
-                                />
-                                <p className="text-xs text-slate-400 mt-1">이탈 고객 재방문 유도</p>
+                                <p className="text-xs text-slate-400 mt-1">평균 객단가를 높입니다. (주의: 이탈 발생 가능)</p>
                             </div>
 
                             {/* New Customer Growth */}
                             <div>
-                                <div className="flex justify-between mb-2">
-                                    <label className="text-sm font-bold text-slate-700">신규 유입 증가 (Growth)</label>
-                                    <span className="text-sm font-mono font-bold text-indigo-600">+{newCustomerGrowth}%</span>
+                                <div className="flex justify-between items-center mb-2">
+                                    <label className="text-sm font-bold text-slate-700">신규 고객 유입 (New Traffic)</label>
+                                    <span className="text-sm font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">{newCustomerGrowth}%</span>
                                 </div>
                                 <input
-                                    type="range" min="0" max="50" step="5"
+                                    type="range"
+                                    min="-20"
+                                    max="100"
+                                    step="5"
                                     value={newCustomerGrowth}
                                     onChange={(e) => setNewCustomerGrowth(Number(e.target.value))}
-                                    className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                                 />
-                                <p className="text-xs text-slate-400 mt-1">마케팅을 통한 신규 고객</p>
+                                <p className="text-xs text-slate-400 mt-1">마케팅을 통해 방문 고객 수를 늘립니다.</p>
+                            </div>
+
+                            {/* Churn Reduction */}
+                            <div>
+                                <div className="flex justify-between items-center mb-2">
+                                    <label className="text-sm font-bold text-slate-700">이탈률 감소 (Churn Reduction)</label>
+                                    <span className="text-sm font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded">{churnReduction}%</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="30"
+                                    step="1"
+                                    value={churnReduction}
+                                    onChange={(e) => setChurnReduction(Number(e.target.value))}
+                                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                                />
+                                <p className="text-xs text-slate-400 mt-1">기존 고객의 이탈을 방지하여 재구매를 유도합니다.</p>
                             </div>
 
                             {/* Cost Reduction */}
                             <div>
-                                <div className="flex justify-between mb-2">
-                                    <label className="text-sm font-bold text-slate-700">비용 절감 (Efficiency)</label>
-                                    <span className="text-sm font-mono font-bold text-rose-600">-{costReduction}%</span>
+                                <div className="flex justify-between items-center mb-2">
+                                    <label className="text-sm font-bold text-slate-700">비용 절감 (Cost Reduction)</label>
+                                    <span className="text-sm font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">{costReduction}%</span>
                                 </div>
                                 <input
-                                    type="range" min="0" max="30" step="1"
+                                    type="range"
+                                    min="0"
+                                    max="50"
+                                    step="1"
                                     value={costReduction}
                                     onChange={(e) => setCostReduction(Number(e.target.value))}
-                                    className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-rose-600"
+                                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-rose-600"
                                 />
-                                <p className="text-xs text-slate-400 mt-1">자재비 및 운영비 절감</p>
+                                <p className="text-xs text-slate-400 mt-1">운영 효율화 및 원가 절감을 통해 비용을 줄입니다.</p>
                             </div>
-                        </div>
-
-                        <div className="flex gap-2 mt-8">
-                            <button
-                                onClick={() => {
-                                    setPriceIncrease(0);
-                                    setChurnReduction(0);
-                                    setNewCustomerGrowth(0);
-                                    setCostReduction(0);
-                                }}
-                                className="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors flex items-center justify-center gap-2 text-sm"
-                            >
-                                <RefreshCcw size={16} />초기화
-                            </button>
                         </div>
                     </div>
 
@@ -338,34 +355,49 @@ const Simulator: React.FC<SimulatorProps> = ({ data }) => {
                     <CampaignIntelligence onApplyCampaign={handleApplyCampaign} baseline={baseline} />
                 </div>
 
-                {/* Results Panel */}
-                <div className="lg:col-span-8 flex flex-col gap-6">
-                    {/* Impact Cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div className={`p-6 rounded-2xl border shadow-sm transition-all duration-500 ${projection.revenueDiff > 0 ? 'bg-blue-50/50 border-blue-100' : 'bg-white border-slate-100'}`}>
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="p-2 bg-white rounded-lg shadow-sm text-blue-600"><DollarSign size={20} /></div>
-                                <span className="text-sm font-bold text-slate-600">예상 추가 매출</span>
+                {/* Visualizer */}
+                <div className="lg:col-span-2 space-y-6">
+                    {/* KPI Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-slate-900 text-white p-5 rounded-xl shadow-lg relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <DollarSign size={48} />
                             </div>
-                            <p className={`text-3xl font-[900] tracking-tight ${projection.revenueDiff >= 0 ? 'text-blue-600' : 'text-slate-400'}`}>
-                                {projection.revenueDiff > 0 ? '+' : ''} {formatMoney(projection.revenueDiff)}
-                            </p>
-                            <p className="text-sm text-slate-500 mt-1">
-                                기존 {formatMoney(baseline.totalRevenue)} 대비
-                            </p>
+                            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">예상 매출 (Projected Revenue)</p>
+                            <h3 className="text-2xl font-bold flex items-baseline gap-2">
+                                ₩ {(projection.revenue / 10000).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}만
+                            </h3>
+                            <div className={`text-xs font-bold mt-2 flex items-center gap-1 ${projection.revenueDiff >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                {projection.revenueDiff >= 0 ? '+' : ''}
+                                ₩ {(projection.revenueDiff / 10000).toLocaleString('ko-KR', { maximumFractionDigits: 1 })}만 변동
+                            </div>
                         </div>
 
-                        <div className={`p-6 rounded-2xl border shadow-sm transition-all duration-500 ${projection.profitDiff > 0 ? 'bg-emerald-50/50 border-emerald-100' : 'bg-white border-slate-100'}`}>
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="p-2 bg-white rounded-lg shadow-sm text-emerald-600"><TrendingUp size={20} /></div>
-                                <span className="text-sm font-bold text-slate-600">예상 추가 순이익</span>
+                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                <TrendingUp size={48} className="text-slate-900" />
                             </div>
-                            <p className={`text-3xl font-[900] tracking-tight ${projection.profitDiff >= 0 ? 'text-emerald-600' : 'text-slate-400'}`}>
-                                {projection.profitDiff > 0 ? '+' : ''} {formatMoney(projection.profitDiff)}
-                            </p>
-                            <p className="text-sm text-slate-500 mt-1">
-                                기존 {formatMoney(baseline.netProfit)} 대비
-                            </p>
+                            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">예상 순수익 (Projected Profit)</p>
+                            <h3 className="text-2xl font-bold text-slate-800 flex items-baseline gap-2">
+                                ₩ {(projection.netProfit / 10000).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}만
+                            </h3>
+                            <div className={`text-xs font-bold mt-2 flex items-center gap-1 ${projection.profitDiff >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                {projection.profitDiff >= 0 ? '+' : ''}
+                                ₩ {(projection.profitDiff / 10000).toLocaleString('ko-KR', { maximumFractionDigits: 1 })}만 변동
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                <Calculator size={48} className="text-slate-900" />
+                            </div>
+                            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">예상 비용 (Projected Cost)</p>
+                            <h3 className="text-2xl font-bold text-slate-800 flex items-baseline gap-2">
+                                ₩ {(projection.cost / 10000).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}만
+                            </h3>
+                            <div className="text-xs font-bold mt-2 text-slate-400">
+                                매출의 {((projection.cost / projection.revenue) * 100).toFixed(1)}%
+                            </div>
                         </div>
                     </div>
 

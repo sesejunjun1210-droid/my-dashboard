@@ -10,13 +10,13 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onLogout }) => {
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'analytics', label: 'Analytics', icon: LineChart },
-    { id: 'simulator', label: 'Business Simulator', icon: Zap },
-    { id: 'crm', label: 'CRM & Marketing', icon: Users },
-    { id: 'retention', label: 'Retention Center', icon: Zap }, // New
-    { id: 'calculator', label: 'Smart Quote', icon: Calculator },
-    { id: 'list', label: 'Transactions', icon: FileText },
+    { id: 'dashboard', label: '대시보드', icon: LayoutDashboard },
+    { id: 'analytics', label: '통계 분석', icon: LineChart },
+    { id: 'simulator', label: '비즈니스 시뮬레이터', icon: Zap },
+    { id: 'crm', label: 'CRM & 마케팅', icon: Users },
+    { id: 'retention', label: '리텐션 센터', icon: Zap }, // New
+    { id: 'calculator', label: '스마트 견적', icon: Calculator },
+    { id: 'list', label: '거래 내역', icon: FileText },
   ];
 
   return (

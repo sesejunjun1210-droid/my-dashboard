@@ -7,8 +7,7 @@ import {
   Info,
   Tag,
   Briefcase,
-  History,
-  ArrowRight
+  History
 } from 'lucide-react';
 import {
   BarChart,
@@ -119,8 +118,57 @@ const QuoteCalculator: React.FC<QuoteCalculatorProps> = ({ data }) => {
             비슷한 브랜드와 작업 내용을 검색하여 시세 분포를 확인하세요.
           </p>
         </div>
-      </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-600 mb-1.5 ml-1">브랜드 (Brand)</label>
+            <div className="relative">
+              <input
+                type="text"
+                list="brand-list"
+                value={selectedBrand}
+                onChange={(e) => setSelectedBrand(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                placeholder="브랜드 선택 또는 입력"
+              />
+              <datalist id="brand-list">
+                {brands.map(b => <option key={b} value={b} />)}
+              </datalist>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-600 mb-1.5 ml-1">카테고리 (Category)</label>
+            <div className="relative">
+              <input
+                type="text"
+                list="category-list"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                placeholder="카테고리 선택 또는 입력"
+              />
+              <datalist id="category-list">
+                {categories.map(c => <option key={c} value={c} />)}
+              </datalist>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-600 mb-1.5 ml-1">키워드 검색 (Keyword)</label>
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input
+                type="text"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder="지갑, 염색, 수선..."
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         {/* Controls Section (Left) */}
         <div className="xl:col-span-4 space-y-6">
@@ -193,29 +241,22 @@ const QuoteCalculator: React.FC<QuoteCalculatorProps> = ({ data }) => {
           {filteredRecords.length > 0 && stats ? (
             <>
               {/* Price Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center relative overflow-hidden group">
-                  <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-blue-400 to-blue-600"></div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">평균 견적가 (Average)</p>
-                  <p className="text-3xl font-bold text-slate-800 group-hover:scale-105 transition-transform">
-                    ₩ {stats.avg.toLocaleString()}
-                  </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div className="text-xs text-slate-500 font-bold mb-1">평균 가격 (Avg)</div>
+                  <div className="text-lg font-bold text-slate-800">₩ {stats.avg.toLocaleString()}</div>
                 </div>
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center relative overflow-hidden group">
-                  <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-emerald-600"></div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">중위 가격 (Median)</p>
-                  <p className="text-3xl font-bold text-emerald-600 group-hover:scale-105 transition-transform">
-                    ₩ {stats.median.toLocaleString()}
-                  </p>
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div className="text-xs text-slate-500 font-bold mb-1">중위 가격 (Median)</div>
+                  <div className="text-lg font-bold text-blue-600">₩ {stats.median.toLocaleString()}</div>
                 </div>
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center relative overflow-hidden group">
-                  <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-slate-200 to-slate-400"></div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">범위 (Range)</p>
-                  <div className="flex items-center gap-2 group-hover:scale-105 transition-transform">
-                    <span className="text-lg font-bold text-slate-600">₩ {(stats.min / 10000).toFixed(0)}만</span>
-                    <ArrowRight size={14} className="text-slate-300" />
-                    <span className="text-lg font-bold text-slate-600">₩ {(stats.max / 10000).toFixed(0)}만</span>
-                  </div>
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div className="text-xs text-slate-500 font-bold mb-1">최소 가격 (Min)</div>
+                  <div className="text-lg font-bold text-slate-800">₩ {stats.min.toLocaleString()}</div>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div className="text-xs text-slate-500 font-bold mb-1">최대 가격 (Max)</div>
+                  <div className="text-lg font-bold text-slate-800">₩ {stats.max.toLocaleString()}</div>
                 </div>
               </div>
 

@@ -27,6 +27,7 @@ export interface CustomerStats {
   churnProbability: number; // 0.0 - 1.0
   nextPurchasePrediction?: string;
   reasons: string[]; // Explainability ("Why?")
+  preferredCategory: string; // Contextual Keyword (e.g., "Bag", "Shoes")
   // Phase 7: Retention Engine Fields
   clv: number; // Customer Lifetime Value (Predicted)
   avgInterPurchaseTime: number; // Avg days between purchases

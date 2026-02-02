@@ -45,11 +45,13 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
     return MARKET_INSIGHTS[monthToShow as number] || MARKET_INSIGHTS[13];
   }, [selectedMonth]);
 
+  /* 1. Global Metrics (KPIs) */
   const metrics = useMemo(() => {
     const totalRevenue = filteredData.reduce((acc, curr) => acc + curr.sales, 0);
     const totalNetProfit = filteredData.reduce((acc, curr) => acc + curr.netProfit, 0);
     const profitMargin = totalRevenue > 0 ? (totalNetProfit / totalRevenue) * 100 : 0;
-    return { totalRevenue, totalNetProfit, profitMargin };
+    const avgOrderValue = filteredData.length > 0 ? totalRevenue / filteredData.length : 0;
+    return { totalRevenue, totalNetProfit, profitMargin, avgOrderValue };
   }, [filteredData]);
 
   // Data Processing (Simplified for brevity, logic maintained)
@@ -163,26 +165,51 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
       </div>
 
       {/* 2. Header & Controls */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
         <div>
-          <h2 className="text-2xl font-[800] tracking-tight">Dashboard</h2>
-          <p className="text-sm text-slate-500 font-medium mt-1">Business Overview</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">대시보드</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            {selectedYear === 'all' ? '전체 기간' : `${selectedYear}년`}
+            {selectedMonth !== 'all' && ` ${selectedMonth}월`} 성과 개요
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex bg-slate-100 p-1 rounded-lg">
-            {(['daily', 'weekly', 'monthly'] as const).map((type) => (
-              <button key={type} onClick={() => setViewType(type)} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${viewType === type ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
-                {type.charAt(0).toUpperCase() + type.slice(1)}
-              </button>
-            ))}
-          </div>
-          <div className="h-6 w-px bg-slate-200 hidden sm:block" />
-          <select value={selectedYear} onChange={(e) => { setSelectedYear(e.target.value === 'all' ? 'all' : Number(e.target.value)); if (e.target.value === 'all') setSelectedMonth('all'); }} className="px-3 py-2 rounded-lg bg-white border border-slate-200 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900/10">
-            <option value="all">Year: All</option>
+          <select
+            value={viewType}
+            onChange={(e) => setViewType(e.target.value as ViewType)}
+            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="daily">일간</option>
+            <option value="weekly">주간</option>
+            <option value="monthly">월간</option>
+          </select>
+          <select
+            value={selectedYear}
+            onChange={(e) => {
+              const val = e.target.value === 'all' ? 'all' : Number(e.target.value);
+              setSelectedYear(val);
+              if (val === 'all') {
+                setSelectedMonth('all');
+                setViewType('monthly');
+              }
+            }}
+            className="px-3 py-2 rounded-lg bg-white border border-slate-200 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+          >
+            <option value="all">연도: 전체</option>
             {availableYears.map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
-          <select value={selectedMonth} disabled={selectedYear === 'all'} onChange={(e) => setSelectedMonth(e.target.value === 'all' ? 'all' : Number(e.target.value))} className={`px-3 py-2 rounded-lg bg-white border border-slate-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 ${selectedYear === 'all' ? 'opacity-50 cursor-not-allowed' : 'text-slate-700'}`}>
-            <option value="all">Month: All</option>
+          <select
+            value={selectedMonth}
+            disabled={selectedYear === 'all'}
+            onChange={(e) => {
+              const val = e.target.value === 'all' ? 'all' : Number(e.target.value);
+              setSelectedMonth(val);
+              if (val !== 'all') setViewType('daily');
+              else setViewType('monthly');
+            }}
+            className={`px-3 py-2 rounded-lg bg-white border border-slate-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 ${selectedYear === 'all' ? 'opacity-50 cursor-not-allowed' : 'text-slate-700'}`}
+          >
+            <option value="all">월: 전체</option>
             {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => <option key={m} value={m}>{m}월</option>)}
           </select>
         </div>
@@ -217,6 +244,28 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                 <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontFamily: 'sans-serif', fontSize: '12px' }} formatter={(val: number) => [`₩ ${val.toLocaleString()}`, 'Revenue']} itemStyle={{ color: '#0f172a' }} />
                 <Area type="monotone" dataKey="revenue" stroke="#0f172a" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" />
               </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Brand Performance (New Feature) */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-base font-bold">Brand Performance (Top 5)</h3>
+          </div>
+          <div className="flex-1 w-full min-h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={brandData} layout="vertical" margin={{ top: 0, right: 30, left: 20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f3f4f6" />
+                <XAxis type="number" hide />
+                <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 11, fontWeight: 600, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '12px' }} formatter={(val: number) => [`₩ ${val.toLocaleString()}`, 'Revenue']} />
+                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
+                  {brandData.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={index === 0 ? '#0f172a' : '#94a3b8'} />
+                  ))}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>

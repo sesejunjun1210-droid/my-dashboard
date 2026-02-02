@@ -66,12 +66,12 @@ const RetentionCommandCenter: React.FC<RetentionCommandCenterProps> = ({ data })
 
                 <div className="flex gap-4 relative z-10">
                     <div className="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-2xl min-w-[140px]">
-                        <p className="text-[10px] text-slate-300 uppercase font-bold tracking-wider mb-1">Avg Retention Score</p>
+                        <p className="text-[10px] text-slate-300 uppercase font-bold tracking-wider mb-1">평균 리텐션 점수</p>
                         <p className="text-2xl font-bold text-emerald-400">{retentionMetrics.avgRetentionScore.toFixed(1)} <span className="text-sm font-normal text-white/50">/ 100</span></p>
                     </div>
                     <div className="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-2xl min-w-[140px]">
-                        <p className="text-[10px] text-slate-300 uppercase font-bold tracking-wider mb-1">Action Required</p>
-                        <p className="text-2xl font-bold text-amber-400">{retentionMetrics.actionRequired} <span className="text-sm font-normal text-white/50">Tasks</span></p>
+                        <p className="text-[10px] text-slate-300 uppercase font-bold tracking-wider mb-1">조치 필요 (Action Required)</p>
+                        <p className="text-2xl font-bold text-amber-400">{retentionMetrics.actionRequired} <span className="text-sm font-normal text-white/50">건</span></p>
                     </div>
                 </div>
             </div>
@@ -98,8 +98,8 @@ const RetentionCommandCenter: React.FC<RetentionCommandCenterProps> = ({ data })
                                         key={idx}
                                         onClick={() => setSelectedCustomer(customer)}
                                         className={`group relative flex items - center gap - 4 p - 4 rounded - xl border transition - all cursor - pointer hover: shadow - md ${selectedCustomer?.phone === customer.phone
-                                                ? 'bg-slate-50 border-indigo-500 ring-1 ring-indigo-500'
-                                                : 'bg-white border-slate-100 hover:border-indigo-200'
+                                            ? 'bg-slate-50 border-indigo-500 ring-1 ring-indigo-500'
+                                            : 'bg-white border-slate-100 hover:border-indigo-200'
                                             } `}
                                     >
                                         {/* Status Indicator */}

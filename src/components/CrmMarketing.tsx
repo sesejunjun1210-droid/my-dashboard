@@ -11,7 +11,6 @@ import {
   Phone,
   ChevronRight,
   AlertTriangle,
-  Coins,
   Copy,
   CheckCircle2
 } from 'lucide-react';
@@ -56,7 +55,17 @@ const CrmMarketing: React.FC<CrmMarketingProps> = ({ data }) => {
       .slice(0, 20),
     [processedCustomers]);
 
-  const valueAtRisk = churnRiskList.reduce((acc, c) => acc + c.totalSpend, 0);
+  const lostRegularsList = useMemo(() => {
+    const fourMonthsAgo = new Date();
+    fourMonthsAgo.setMonth(fourMonthsAgo.getMonth() - 4);
+
+    return processedCustomers
+      .filter(c => c.visitCount >= 3 && new Date(c.lastVisit) < fourMonthsAgo)
+      .sort((a, b) => b.totalSpend - a.totalSpend)
+      .slice(0, 20);
+  }, [processedCustomers]);
+
+
 
   // Customer History for Modal
   const customerHistory = useMemo(() => {
@@ -68,13 +77,13 @@ const CrmMarketing: React.FC<CrmMarketingProps> = ({ data }) => {
   }, [selectedCustomer, data]);
 
   // Handle Smart Script Copy
-  const handleCopyScript = (e: React.MouseEvent, type: 'retention' | 'churn', name: string) => {
+  const handleCopyScript = (e: React.MouseEvent, type: 'retention' | 'churn', name: string, category: string = '제품') => {
     e.stopPropagation();
     let text = "";
     if (type === 'retention') {
-      text = `[아르티밀라노] 안녕하세요 ${name}님!\n작년에 맡겨주신 소중한 제품은 잘 사용하고 계신가요?\n\n수선 후 1년이 지나 가죽 상태 점검 및 케어가 필요한 시기입니다. 매장 방문해주시면 무상으로 상태 점검 도와드리겠습니다.\n\n편하게 문의주세요! 감사합니다.`;
+      text = `[아르티밀라노] 안녕하세요 ${name}님!\n작년에 맡겨주신 소중한 ${category}은(는) 잘 사용하고 계신가요?\n\n수선 후 시간이 꽤 흘러 가죽 상태 점검 및 케어가 필요한 시기입니다. 매장 방문해주시면 ${category} 무상 점검 도와드리겠습니다.\n\n편하게 문의주세요! 감사합니다.`;
     } else {
-      text = `[아르티밀라노] 안녕하세요 ${name}님, 잘 지내시죠?\n\n요즘 뵙지 못해 안부차 연락드렸습니다. 환절기 가죽 관리 관련하여 궁금하신 점 있으시면 언제든 편하게 연락주세요!\n\n${name}님만을 위한 특별 케어 서비스도 준비되어 있습니다. 감사합니다.`;
+      text = `[아르티밀라노] 안녕하세요 ${name}님, 잘 지내시죠?\n\n요즘 뵙지 못해 안부차 연락드렸습니다. 환절기 ${category} 관리 관련하여 궁금하신 점 있으시면 언제든 편하게 연락주세요!\n\n${name}님만을 위한 특별 케어 서비스도 준비되어 있습니다. 감사합니다.`;
     }
 
     navigator.clipboard.writeText(text).then(() => {
@@ -104,39 +113,25 @@ const CrmMarketing: React.FC<CrmMarketingProps> = ({ data }) => {
             고객의 이탈 확률과 재방문 주기를 AI가 분석하여 제공합니다.
           </p>
         </div>
-      </div>
-
-      {/* KPI Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-3.5 bg-blue-50 rounded-2xl text-blue-600 ring-1 ring-blue-100"><Users size={24} /></div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">총 식별 고객</p>
-              <p className="text-3xl font-bold text-slate-900 tracking-tight">{metrics.total}<span className="text-lg font-normal text-slate-400 ml-1">명</span></p>
-            </div>
+        <div className="flex gap-4">
+          <div className="bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
+            <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">총 고객 (Total)</p>
+            <p className="text-xl font-bold text-slate-800">{metrics.total.toLocaleString()}명</p>
           </div>
-          <p className="text-xs text-slate-400 border-t border-slate-50 pt-3">전화번호 기준 유니크 고객</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-3.5 bg-emerald-50 rounded-2xl text-emerald-600 ring-1 ring-emerald-100"><Activity size={24} /></div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">재방문 고객</p>
-              <p className="text-3xl font-bold text-slate-900 tracking-tight">{metrics.returning}<span className="text-lg font-normal text-slate-400 ml-1">명</span></p>
-            </div>
+          <div className="bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
+            <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">재방문 (Returning)</p>
+            <p className="text-xl font-bold text-blue-600">{metrics.returning.toLocaleString()}명</p>
           </div>
-          <p className="text-xs text-slate-400 border-t border-slate-50 pt-3">2회 이상 이용한 충성 고객</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-3.5 bg-amber-50 rounded-2xl text-amber-600 ring-1 ring-amber-100"><Crown size={24} /></div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">재방문율</p>
-              <p className="text-3xl font-bold text-slate-900 tracking-tight">{metrics.returnRate}<span className="text-lg font-normal text-slate-400 ml-1">%</span></p>
-            </div>
+          <div className="bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
+            <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">재방문율 (Rate)</p>
+            <p className="text-xl font-bold text-emerald-600">{metrics.returnRate}%</p>
           </div>
-          <p className="text-xs text-slate-400 border-t border-slate-50 pt-3">전체 고객 대비 재방문 비율</p>
+          <div className="bg-slate-900 px-4 py-2 rounded-lg border border-slate-800 shadow-lg">
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1">
+              <Crown size={12} className="text-amber-400" /> VIP
+            </p>
+            <p className="text-xl font-bold text-white">{metrics.vvipCount.toLocaleString()}명</p>
+          </div>
         </div>
       </div>
 
@@ -169,7 +164,7 @@ const CrmMarketing: React.FC<CrmMarketingProps> = ({ data }) => {
                   </div>
                 </div>
                 <button
-                  onClick={(e) => handleCopyScript(e, 'retention', customer.name)}
+                  onClick={(e) => handleCopyScript(e, 'retention', customer.name, customer.preferredCategory)}
                   className="p-3 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all active:scale-95 shrink-0 shadow-sm border border-indigo-100 hover:border-transparent"
                   title="안부 문자 복사"
                 >
@@ -186,39 +181,16 @@ const CrmMarketing: React.FC<CrmMarketingProps> = ({ data }) => {
           </div>
         </div>
 
-        {/* 2. Churn Risk Radar & Money on Table */}
-        <div className="bg-gradient-to-br from-rose-50/50 to-orange-50/50 p-6 rounded-2xl border border-rose-100 flex flex-col h-full shadow-sm">
-          <div className="flex flex-col mb-5 gap-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-lg font-bold text-rose-900 flex items-center gap-2">
-                  <AlertTriangle size={20} className="text-rose-600" />
-                  🚨 이탈 위험 감지 (AI)
-                </h3>
-                <p className="text-sm text-rose-700/70 mt-1">
-                  평소 주기 대비 이탈 확률이 높은 고객을 식별했습니다.
-                </p>
-              </div>
-              <span className="bg-rose-100 text-rose-700 px-3 py-1 rounded-full text-xs font-bold shrink-0">
-                {churnRiskList.length}명
-              </span>
-            </div>
-
-            {/* Money on the Table Card */}
-            {valueAtRisk > 0 && (
-              <div className="bg-white border border-rose-100 rounded-xl p-4 flex items-center gap-4 shadow-sm relative overflow-hidden">
-                <div className="absolute left-0 top-0 w-1 h-full bg-rose-500"></div>
-                <div className="p-2.5 bg-rose-50 rounded-full text-rose-600 shrink-0">
-                  <Coins size={20} />
-                </div>
-                <div className="overflow-hidden">
-                  <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wide truncate mb-0.5">Value at Risk</p>
-                  <p className="text-sm font-medium text-slate-600 truncate leading-snug">
-                    총 <span className="text-rose-600 text-lg font-bold">₩ {valueAtRisk.toLocaleString()}</span> 가치가 이탈 중입니다.
-                  </p>
-                </div>
-              </div>
-            )}
+        {/* Churn Risk List */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <AlertTriangle className="text-rose-500" />
+              이탈 위험 감지 (Smart Action Required)
+            </h3>
+            <span className="text-xs bg-rose-50 text-rose-600 px-2 py-1 rounded-full font-bold">
+              {churnRiskList.length}명 위험
+            </span>
           </div>
 
           <div className="space-y-3 flex-1 overflow-y-auto max-h-[240px] custom-scrollbar pr-1 -mr-2">
@@ -227,7 +199,7 @@ const CrmMarketing: React.FC<CrmMarketingProps> = ({ data }) => {
                 <div className="overflow-hidden mr-3">
                   <div className="flex items-center gap-2 mb-1">
                     <p className="font-bold text-slate-800 text-sm truncate">{customer.name}</p>
-                    <span className="text-[10px] bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded font-bold whitespace-nowrap">
+                    <span className="text-[10px] bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
                       {(customer.churnProbability * 100).toFixed(0)}% 위험
                     </span>
                   </div>
@@ -236,7 +208,7 @@ const CrmMarketing: React.FC<CrmMarketingProps> = ({ data }) => {
                   </p>
                 </div>
                 <button
-                  onClick={(e) => handleCopyScript(e, 'churn', customer.name)}
+                  onClick={(e) => handleCopyScript(e, 'churn', customer.name, customer.preferredCategory)}
                   className="p-3 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-600 hover:text-white transition-all active:scale-95 shrink-0 shadow-sm border border-rose-100 hover:border-transparent"
                   title="안부 문자 복사"
                 >
@@ -251,6 +223,54 @@ const CrmMarketing: React.FC<CrmMarketingProps> = ({ data }) => {
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Lost Regulars Analysis (New) */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <AlertTriangle className="text-slate-500" />
+            놓친 단골 손님 (Lost Regulars)
+          </h3>
+          <span className="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-bold">
+            {lostRegularsList.length}명 (3회 이상 방문 & 4개월 미방문)
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {lostRegularsList.map((customer, i) => (
+            <div key={i} className="p-4 rounded-xl border border-slate-100 hover:border-slate-300 transition-all group bg-slate-50/50">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <h4 className="font-bold text-slate-700">{customer.name}</h4>
+                  <p className="text-xs text-slate-400">{customer.phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-****-$3')}</p>
+                  <span className="text-[10px] font-bold bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-500">
+                    {customer.visitCount}회 방문
+                  </span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center text-xs text-slate-500 mb-2">
+                <span>주로 맡김: <span className="font-bold text-slate-700">{customer.preferredCategory}</span></span>
+                <span>{customer.lastVisit}</span>
+              </div>
+              <div className="flex justify-end items-center text-xs text-slate-500 mb-3">
+                <span className="font-bold text-slate-700">₩ {(customer.totalSpend / 10000).toLocaleString()}만</span>
+              </div>
+              <button
+                onClick={(e) => handleCopyScript(e, 'retention', customer.name, customer.preferredCategory)}
+                className="w-full py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors flex items-center justify-center gap-2 group-hover:border-slate-300"
+              >
+                <Copy size={12} />
+                안부 문자 복사
+              </button>
+            </div>
+          ))}
+          {lostRegularsList.length === 0 && (
+            <div className="col-span-full py-8 text-center text-slate-400 text-sm">
+              다행히 놓친 단골 손님이 없습니다! 🎉
+            </div>
+          )}
         </div>
       </div>
 
