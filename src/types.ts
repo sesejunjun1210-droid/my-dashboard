@@ -21,6 +21,12 @@ export interface CustomerStats {
   visitCount: number;
   totalSpend: number;
   lastVisit: string;
+  // Enterprise AI Fields
+  vipScore: number; // 0-100 Confidence Score
+  segment: 'VIP' | 'High Potential' | 'Regular' | 'New' | 'Risk' | 'Lost';
+  churnProbability: number; // 0.0 - 1.0
+  nextPurchasePrediction?: string;
+  reasons: string[]; // Explainability ("Why?")
 }
 
 export interface AggregatedMetric {

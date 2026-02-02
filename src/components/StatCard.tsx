@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { LucideIcon, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
+import { LucideIcon, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 interface StatCardProps {
   title: string;
@@ -8,52 +8,49 @@ interface StatCardProps {
   icon: LucideIcon;
   trend?: 'up' | 'down' | 'neutral';
   trendValue?: string;
-  color?: 'blue' | 'emerald' | 'amber' | 'rose' | 'indigo';
 }
 
-const StatCard: React.FC<StatCardProps> = ({ 
-  title, 
-  value, 
-  subValue, 
-  icon: Icon, 
+const StatCard: React.FC<StatCardProps> = ({
+  title,
+  value,
+  subValue,
+  icon: Icon,
   trend = 'neutral',
   trendValue,
-  color = 'blue' 
 }) => {
-  const colorStyles = {
-    blue: { bg: 'bg-blue-50/80', text: 'text-blue-600', border: 'border-blue-100' },
-    emerald: { bg: 'bg-emerald-50/80', text: 'text-emerald-600', border: 'border-emerald-100' },
-    amber: { bg: 'bg-amber-50/80', text: 'text-amber-600', border: 'border-amber-100' },
-    rose: { bg: 'bg-rose-50/80', text: 'text-rose-600', border: 'border-rose-100' },
-    indigo: { bg: 'bg-indigo-50/80', text: 'text-indigo-600', border: 'border-indigo-100' },
-  }[color];
-
   return (
-    <div className="group relative bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md hover:border-slate-200 transition-all duration-300">
-      <div className="flex justify-between items-start mb-5">
-        <div className={`p-3.5 rounded-2xl ${colorStyles.bg} ${colorStyles.text} transition-colors ring-1 ring-inset ${colorStyles.border}`}>
-          <Icon size={22} strokeWidth={2} />
+    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow duration-200">
+      <div className="flex justify-between items-start mb-4">
+        <span className="text-sm font-semibold text-slate-500 flex items-center gap-2">
+          {title}
+        </span>
+        <div className="text-slate-300 p-2 bg-slate-50 rounded-lg">
+          <Icon size={18} />
         </div>
-        {trendValue && (
-          <div className={`flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full ${
-            trend === 'up' ? 'bg-emerald-50 text-emerald-600' : 
-            trend === 'down' ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-500'
-          }`}>
-            {trend === 'up' && <ArrowUpRight size={12} />}
-            {trend === 'down' && <ArrowDownRight size={12} />}
-            {trend === 'neutral' && <Minus size={12} />}
-            {trendValue}
-          </div>
-        )}
       </div>
-      
+
       <div>
-        <h3 className="text-3xl font-bold text-slate-900 tracking-tight mb-1.5">{value}</h3>
-        <p className="text-sm font-medium text-slate-500">{title}</p>
-        {subValue && (
-          <p className="text-xs text-slate-400 mt-4 pt-4 border-t border-slate-50 break-keep leading-relaxed">
-            {subValue}
-          </p>
+        <div className="flex items-baseline gap-2">
+          <h3 className="text-3xl font-[800] text-slate-900 tracking-tight">{value}</h3>
+        </div>
+
+        {(subValue || trendValue) && (
+          <div className="flex items-center gap-3 mt-2">
+            {trendValue && (
+              <div className={`flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded ${trend === 'up' ? 'bg-emerald-50 text-emerald-600' :
+                  trend === 'down' ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-500'
+                }`}>
+                {trend === 'up' && <ArrowUpRight size={12} />}
+                {trend === 'down' && <ArrowDownRight size={12} />}
+                {trendValue}
+              </div>
+            )}
+            {subValue && (
+              <p className="text-xs text-slate-400 font-medium tracking-tight truncate">
+                {subValue}
+              </p>
+            )}
+          </div>
         )}
       </div>
     </div>

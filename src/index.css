@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Apple/Notion Hybrid Palette */
+  --bg-primary: #F5F5F7; /* Apple Off-white */
+  --bg-card: #FFFFFF;
+  --bg-sidebar: rgba(255, 255, 255, 0.72); /* Glass */
+  
+  --text-primary: #1D1D1F; /* Apple Black */
+  --text-secondary: #86868B;
+  --text-tertiary: #A1A1A6;
+
+  --accent-blue: #007AFF; /* Apple Blue */
+  --accent-gold: #D4AF37; /* Premium Gold */
+  
+  --shadow-diffuse: 0 4px 24px -4px rgba(0, 0, 0, 0.04);
+  --shadow-float: 0 8px 32px -8px rgba(0, 0, 0, 0.08);
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: "Pretendard Variable", Pretendard, -apple-system, sans-serif;
+  letter-spacing: -0.02em; /* Apple "Tight" Tracking */
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Glassmorphism Utilities */
+.glass {
+  background: var(--bg-sidebar);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.card-lift {
+  background: var(--bg-card);
+  box-shadow: var(--shadow-diffuse);
+  border-radius: 20px; /* Super Ellipse approximation */
+  transition: transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1), box-shadow 0.2s;
+}
+
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-float);
+}
+
+/* Scrollbar refinement */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.1);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.2);
+}
