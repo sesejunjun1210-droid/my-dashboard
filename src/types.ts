@@ -27,6 +27,12 @@ export interface CustomerStats {
   churnProbability: number; // 0.0 - 1.0
   nextPurchasePrediction?: string;
   reasons: string[]; // Explainability ("Why?")
+  // Phase 7: Retention Engine Fields
+  clv: number; // Customer Lifetime Value (Predicted)
+  avgInterPurchaseTime: number; // Avg days between purchases
+  retentionScore: number; // 0-100 Persistence Score
+  persona: 'Concierge' | 'Advisor' | 'Incentivizer'; // Communication Tone
+  nextServiceWindow: { start: string; end: string; }; // Golden Window
 }
 
 export interface AggregatedMetric {

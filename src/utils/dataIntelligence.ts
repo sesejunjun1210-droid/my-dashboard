@@ -1,4 +1,5 @@
 import { SaleRecord, CustomerStats } from '../types';
+import { calculateRetentionMetrics } from '../services/retentionEngine';
 
 /**
  * Enterprise AI Intelligence Layer
@@ -92,7 +93,9 @@ export const analyzeCustomer = (
         }
     }
 
-    return {
+    // 7. Enterprise Retention Engine Integration
+    // Temporarily create base object
+    const baseStats: CustomerStats = {
         phone: records[0].phone,
         name: records[0].customer_name,
         visitCount,
@@ -102,8 +105,16 @@ export const analyzeCustomer = (
         segment,
         churnProbability: finalChurn,
         nextPurchasePrediction: nextPurchase,
-        reasons: [...new Set(reasons)] // Dedup reasons
+        reasons: [...new Set(reasons)], // Dedup reasons
+        // Placeholders (Will be overwritten by calculateRetentionMetrics)
+        clv: 0,
+        avgInterPurchaseTime: 0,
+        retentionScore: 0,
+        persona: 'Advisor',
+        nextServiceWindow: { start: '', end: '' }
     };
+
+    return calculateRetentionMetrics(records, baseStats);
 };
 
 export const batchProcessCustomers = (allRecords: SaleRecord[]): CustomerStats[] => {

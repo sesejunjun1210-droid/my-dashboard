@@ -6,6 +6,7 @@ import Analytics from './components/Analytics';
 import SalesTable from './components/SalesTable';
 import QuoteCalculator from './components/QuoteCalculator';
 import CrmMarketing from './components/CrmMarketing';
+import RetentionCommandCenter from './components/RetentionCommandCenter';
 import Simulator from './components/Simulator';
 import { SaleRecord } from './types';
 import { fetchSheetData } from './services/dataService';
@@ -13,7 +14,7 @@ import { Menu, Lock, ArrowRight } from 'lucide-react';
 
 const App: React.FC = () => {
   const [data, setData] = useState<SaleRecord[]>([]);
-  const [view, setView] = useState<'dashboard' | 'list' | 'analytics' | 'calculator' | 'crm' | 'simulator'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'list' | 'analytics' | 'calculator' | 'crm' | 'simulator' | 'retention'>('dashboard');
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -171,6 +172,7 @@ const App: React.FC = () => {
             {view === 'analytics' && <Analytics data={data} />}
             {view === 'simulator' && <Simulator data={data} />}
             {view === 'crm' && <CrmMarketing data={data} />}
+            {view === 'retention' && <RetentionCommandCenter data={data} />}
             {view === 'calculator' && <QuoteCalculator data={data} />}
             {view === 'list' && <SalesTable data={data} />}
           </div>

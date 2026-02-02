@@ -1,9 +1,10 @@
 ﻿import React from 'react';
-import { LayoutDashboard, FileText, Settings, LogOut, Scissors, LineChart, Calculator, Users, Zap } from 'lucide-react';
+import { LayoutDashboard, FileText, Settings, LogOut, Scissors, LineChart, Calculator, Users, Zap, Lightbulb } from 'lucide-react';
+import { MARKET_INSIGHTS } from '../constants';
 
 interface SidebarProps {
-  currentView: 'dashboard' | 'list' | 'analytics' | 'calculator' | 'crm' | 'simulator';
-  onNavigate: (view: 'dashboard' | 'list' | 'analytics' | 'calculator' | 'crm' | 'simulator') => void;
+  currentView: 'dashboard' | 'list' | 'analytics' | 'calculator' | 'crm' | 'simulator' | 'retention';
+  onNavigate: (view: 'dashboard' | 'list' | 'analytics' | 'calculator' | 'crm' | 'simulator' | 'retention') => void;
   onLogout?: () => void;
 }
 
@@ -13,6 +14,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onLogout }) 
     { id: 'analytics', label: 'Analytics', icon: LineChart },
     { id: 'simulator', label: 'Business Simulator', icon: Zap },
     { id: 'crm', label: 'CRM & Marketing', icon: Users },
+    { id: 'retention', label: 'Retention Center', icon: Zap }, // New
     { id: 'calculator', label: 'Smart Quote', icon: Calculator },
     { id: 'list', label: 'Transactions', icon: FileText },
   ];
@@ -58,6 +60,28 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onLogout }) 
         })}
       </nav>
 
+
+
+      {/* Seasonal Focus */}
+      <div className="px-4 mb-4">
+        <div className="bg-gradient-to-br from-indigo-50 to-blue-50 border border-blue-100 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <Lightbulb size={14} className="text-blue-600" />
+            <h3 className="text-xs font-bold text-blue-900">
+              {new Date().getMonth() + 1}월의 주요 이벤트
+            </h3>
+          </div>
+          <div className="space-y-2">
+            {MARKET_INSIGHTS[new Date().getMonth() + 1]?.events.map((event, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                <span className="text-xs text-slate-600 font-medium">{event}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* User Profile / Bottom */}
       <div className="p-4 bg-white/40 border-t border-slate-200/50 backdrop-blur-sm">
         <div className="flex items-center gap-3 px-2 py-2 mb-1">
@@ -80,7 +104,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onLogout }) 
           <span>Sign Out</span>
         </button>
       </div>
-    </div>
+    </div >
   );
 };
 
