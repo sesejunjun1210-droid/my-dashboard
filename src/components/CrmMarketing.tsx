@@ -2,20 +2,18 @@ import React, { useMemo, useState } from 'react';
 import { SaleRecord, CustomerStats } from '../types';
 import { batchProcessCustomers } from '../utils/dataIntelligence';
 import {
+  Clock,
+  Search,
   Users,
   Activity,
   Crown,
-  Calendar,
-  CalendarDays,
-  Phone,
-  Clock,
   Sparkles,
+  Phone,
   ChevronRight,
-  Search,
   AlertTriangle,
+  Coins,
   Copy,
-  CheckCircle2,
-  Coins
+  CheckCircle2
 } from 'lucide-react';
 
 interface CrmMarketingProps {

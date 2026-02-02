@@ -21,7 +21,7 @@ export const processCSVData = (csvText: string): SaleRecord[] => {
     const currentLine = lines[i].trim();
     if (!currentLine) continue;
 
-    const matches = currentLine.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+
     const values = currentLine.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, ''));
 
     if (!values) continue;

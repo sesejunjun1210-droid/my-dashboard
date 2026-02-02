@@ -1,23 +1,22 @@
 import React, { useState, useMemo } from 'react';
-import { SaleRecord } from '../../types';
-import { 
-  Search, 
-  Calculator, 
-  TrendingUp, 
-  Info, 
-  DollarSign, 
-  Tag, 
+import { SaleRecord } from '../types';
+import {
+  Search,
+  Calculator,
+  TrendingUp,
+  Info,
+  Tag,
   Briefcase,
   History,
   ArrowRight
 } from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  ResponsiveContainer, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
   Cell,
   ReferenceLine
 } from 'recharts';
@@ -45,14 +44,14 @@ const QuoteCalculator: React.FC<QuoteCalculatorProps> = ({ data }) => {
   // Filter Logic
   const filteredRecords = useMemo(() => {
     if (!data.length) return [];
-    
+
     return data.filter(item => {
       const matchBrand = selectedBrand === 'All' || item.brand === selectedBrand;
       const matchCategory = selectedCategory === 'All' || item.category === selectedCategory;
-      const matchKeyword = !keyword || 
-        item.description.toLowerCase().includes(keyword.toLowerCase()) || 
+      const matchKeyword = !keyword ||
+        item.description.toLowerCase().includes(keyword.toLowerCase()) ||
         item.sub_category.toLowerCase().includes(keyword.toLowerCase());
-      
+
       return matchBrand && matchCategory && matchKeyword && item.sales > 0;
     }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [data, selectedBrand, selectedCategory, keyword]);
@@ -60,18 +59,18 @@ const QuoteCalculator: React.FC<QuoteCalculatorProps> = ({ data }) => {
   // Statistics
   const stats = useMemo(() => {
     if (filteredRecords.length === 0) return null;
-    
+
     const prices = filteredRecords.map(r => r.sales);
     const sum = prices.reduce((a, b) => a + b, 0);
     const avg = Math.round(sum / prices.length);
     const min = Math.min(...prices);
     const max = Math.max(...prices);
-    
+
     // Median
     const sortedPrices = [...prices].sort((a, b) => a - b);
     const mid = Math.floor(sortedPrices.length / 2);
-    const median = sortedPrices.length % 2 !== 0 
-      ? sortedPrices[mid] 
+    const median = sortedPrices.length % 2 !== 0
+      ? sortedPrices[mid]
       : (sortedPrices[mid - 1] + sortedPrices[mid]) / 2;
 
     return { avg, min, max, median, count: prices.length };
@@ -80,15 +79,15 @@ const QuoteCalculator: React.FC<QuoteCalculatorProps> = ({ data }) => {
   // Chart Data (Price Distribution)
   const chartData = useMemo(() => {
     if (!stats || !filteredRecords.length) return [];
-    
+
     // Create buckets based on range
     const step = 50000; // 5만원 단위
     const bucketMap: Record<string, number> = {};
-    
+
     filteredRecords.forEach(r => {
       const bucketIndex = Math.floor(r.sales / step);
       const bucketStart = bucketIndex * step;
-      const bucketLabel = `${(bucketStart/10000).toLocaleString()}~${((bucketStart+step)/10000).toLocaleString()}만`;
+      const bucketLabel = `${(bucketStart / 10000).toLocaleString()}~${((bucketStart + step) / 10000).toLocaleString()}만`;
       bucketMap[bucketLabel] = (bucketMap[bucketLabel] || 0) + 1;
     });
 
@@ -107,19 +106,19 @@ const QuoteCalculator: React.FC<QuoteCalculatorProps> = ({ data }) => {
     <div className="space-y-6 pb-20 animate-in fade-in duration-500">
       {/* Header */}
       <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-6 rounded-2xl shadow-lg border border-slate-700 text-white relative overflow-hidden">
-         <div className="absolute top-0 right-0 p-4 opacity-10">
-            <Calculator className="w-[120px] h-[120px]" />
-         </div>
-         <div className="relative z-10 max-w-2xl">
-           <h2 className="text-2xl font-bold flex items-center gap-3 mb-2">
-             <Calculator className="text-amber-400" />
-             AI 스마트 견적 계산기
-           </h2>
-           <p className="text-slate-300 leading-relaxed">
-             과거 시공 데이터를 분석하여 <strong>최적의 견적가</strong>를 제안합니다.<br/>
-             비슷한 브랜드와 작업 내용을 검색하여 시세 분포를 확인하세요.
-           </p>
-         </div>
+        <div className="absolute top-0 right-0 p-4 opacity-10">
+          <Calculator className="w-[120px] h-[120px]" />
+        </div>
+        <div className="relative z-10 max-w-2xl">
+          <h2 className="text-2xl font-bold flex items-center gap-3 mb-2">
+            <Calculator className="text-amber-400" />
+            AI 스마트 견적 계산기
+          </h2>
+          <p className="text-slate-300 leading-relaxed">
+            과거 시공 데이터를 분석하여 <strong>최적의 견적가</strong>를 제안합니다.<br />
+            비슷한 브랜드와 작업 내용을 검색하여 시세 분포를 확인하세요.
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
@@ -127,16 +126,16 @@ const QuoteCalculator: React.FC<QuoteCalculatorProps> = ({ data }) => {
         <div className="xl:col-span-4 space-y-6">
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-full">
             <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-              <Search size={20} className="text-blue-600"/>
+              <Search size={20} className="text-blue-600" />
               조건 검색
             </h3>
-            
+
             <div className="space-y-5">
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-1">
                   <Briefcase size={14} /> 브랜드
                 </label>
-                <select 
+                <select
                   value={selectedBrand}
                   onChange={(e) => setSelectedBrand(e.target.value)}
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
@@ -149,7 +148,7 @@ const QuoteCalculator: React.FC<QuoteCalculatorProps> = ({ data }) => {
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-1">
                   <Tag size={14} /> 카테고리
                 </label>
-                <select 
+                <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
@@ -160,11 +159,11 @@ const QuoteCalculator: React.FC<QuoteCalculatorProps> = ({ data }) => {
 
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-1">
-                   <Info size={14} /> 키워드 (작업내용)
+                  <Info size={14} /> 키워드 (작업내용)
                 </label>
                 <div className="relative">
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={keyword}
                     onChange={(e) => setKeyword(e.target.value)}
                     placeholder="예: 염색, 클리닝, 밑창..."
@@ -203,19 +202,19 @@ const QuoteCalculator: React.FC<QuoteCalculatorProps> = ({ data }) => {
                   </p>
                 </div>
                 <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center relative overflow-hidden group">
-                   <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-emerald-600"></div>
+                  <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-emerald-600"></div>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">중위 가격 (Median)</p>
                   <p className="text-3xl font-bold text-emerald-600 group-hover:scale-105 transition-transform">
                     ₩ {stats.median.toLocaleString()}
                   </p>
                 </div>
                 <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center relative overflow-hidden group">
-                   <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-slate-200 to-slate-400"></div>
+                  <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-slate-200 to-slate-400"></div>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">범위 (Range)</p>
                   <div className="flex items-center gap-2 group-hover:scale-105 transition-transform">
-                    <span className="text-lg font-bold text-slate-600">₩ {(stats.min/10000).toFixed(0)}만</span>
-                    <ArrowRight size={14} className="text-slate-300"/>
-                    <span className="text-lg font-bold text-slate-600">₩ {(stats.max/10000).toFixed(0)}만</span>
+                    <span className="text-lg font-bold text-slate-600">₩ {(stats.min / 10000).toFixed(0)}만</span>
+                    <ArrowRight size={14} className="text-slate-300" />
+                    <span className="text-lg font-bold text-slate-600">₩ {(stats.max / 10000).toFixed(0)}만</span>
                   </div>
                 </div>
               </div>
@@ -234,24 +233,24 @@ const QuoteCalculator: React.FC<QuoteCalculatorProps> = ({ data }) => {
                 <div className="h-[250px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <XAxis 
-                        dataKey="name" 
-                        tick={{fontSize: 10, fill: '#64748b'}} 
-                        axisLine={false} 
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fontSize: 10, fill: '#64748b' }}
+                        axisLine={false}
                         tickLine={false}
                       />
-                      <YAxis 
-                        tick={{fontSize: 10, fill: '#64748b'}} 
-                        axisLine={false} 
+                      <YAxis
+                        tick={{ fontSize: 10, fill: '#64748b' }}
+                        axisLine={false}
                         tickLine={false}
                       />
-                      <Tooltip 
-                        cursor={{fill: '#f1f5f9'}}
+                      <Tooltip
+                        cursor={{ fill: '#f1f5f9' }}
                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                       />
                       <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                         {chartData.map((entry, index) => (
-                           <Cell key={`cell-${index}`} fill={entry.name.includes(`${(stats.avg/10000).toFixed(0)}`) ? '#3b82f6' : '#cbd5e1'} />
+                          <Cell key={`cell-${index}`} fill={entry.name.includes(`${(stats.avg / 10000).toFixed(0)}`) ? '#3b82f6' : '#cbd5e1'} />
                         ))}
                       </Bar>
                       <ReferenceLine x={stats.avg} stroke="red" strokeDasharray="3 3" />
@@ -304,11 +303,11 @@ const QuoteCalculator: React.FC<QuoteCalculatorProps> = ({ data }) => {
             </>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-slate-400 bg-white rounded-2xl border border-slate-100 border-dashed p-10">
-               <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                  <Search size={32} className="opacity-20" />
-               </div>
-               <p className="text-lg font-bold text-slate-500">조건을 선택해주세요</p>
-               <p className="text-sm mt-1">좌측 패널에서 브랜드, 카테고리 또는 키워드를 입력하면 분석 결과가 나타납니다.</p>
+              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                <Search size={32} className="opacity-20" />
+              </div>
+              <p className="text-lg font-bold text-slate-500">조건을 선택해주세요</p>
+              <p className="text-sm mt-1">좌측 패널에서 브랜드, 카테고리 또는 키워드를 입력하면 분석 결과가 나타납니다.</p>
             </div>
           )}
         </div>

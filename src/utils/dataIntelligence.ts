@@ -34,7 +34,7 @@ export const analyzeCustomer = (
     const avgInterVisitTime = visitCount > 1 ? accountAgeDays / (uniqueDays - 1) : accountAgeDays;
 
     // Monetary: Average Order Value
-    const aov = totalSpend / visitCount;
+
 
     // 3. Scoring Logic (Simple Heuristic for now, can be ML later)
     let score = 0;

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { SaleRecord } from '../../types';
+import { SaleRecord } from '../types';
 import { Search, Download, Filter, User } from 'lucide-react';
 
 interface SalesTableProps {
@@ -109,8 +109,8 @@ const SalesTable: React.FC<SalesTableProps> = ({ data }) => {
                       </div>
                     </div>
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${item.sub_category === '워크인' ? 'bg-blue-50 text-blue-600' :
-                        item.sub_category === '택배' ? 'bg-purple-50 text-purple-600' :
-                          'bg-slate-100 text-slate-600'
+                      item.sub_category === '택배' ? 'bg-purple-50 text-purple-600' :
+                        'bg-slate-100 text-slate-600'
                       }`}>{item.sub_category}</span>
                   </div>
 
@@ -197,8 +197,8 @@ const SalesTable: React.FC<SalesTableProps> = ({ data }) => {
                     </td>
                     <td className="px-6 py-5 text-center">
                       <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${item.sub_category === '워크인' ? 'bg-blue-50 text-blue-600' :
-                          item.sub_category === '택배' ? 'bg-purple-50 text-purple-600' :
-                            'bg-slate-100 text-slate-600'
+                        item.sub_category === '택배' ? 'bg-purple-50 text-purple-600' :
+                          'bg-slate-100 text-slate-600'
                         }`}>{item.sub_category}</span>
                     </td>
                     <td className="px-6 py-5 text-slate-700 text-right font-bold font-mono tracking-tight text-base">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Calendar, ArrowRight, TrendingUp, Search } from 'lucide-react';
+import { Sparkles, ArrowRight, Search, TrendingUp } from 'lucide-react';
 
 export interface CampaignIdea {
     id: string;
@@ -58,7 +58,7 @@ const CampaignIntelligence: React.FC<CampaignIntelligenceProps> = ({ onApplyCamp
             return {
                 id: 'c1',
                 reason: '신규 고객 확보 시급',
-                evidence: `현재 단골 고객이 ${baseline.customers}명으로, 안정적인 매출 기반을 위해 신규 유입이 가장 필요한 시점입니다. 겨울철 잠재 수요를 깨우는 '봄맞이 프로모션'이 가장 효과적입니다.`
+                evidence: `현재 단골 고객이 ${baseline.customers} 명으로, 안정적인 매출 기반을 위해 신규 유입이 가장 필요한 시점입니다.겨울철 잠재 수요를 깨우는 '봄맞이 프로모션'이 가장 효과적입니다.`
             };
         }
         // Condition B: Low Avg Ticket -> Need Bundling (Valentine)
@@ -66,14 +66,14 @@ const CampaignIntelligence: React.FC<CampaignIntelligenceProps> = ({ onApplyCamp
             return {
                 id: 'c2',
                 reason: '객단가(AOV) 상승 기회',
-                evidence: `평균 객단가가 ${Math.round(baseline.avgTicket / 1000).toLocaleString()}천원으로, 업계 평균 대비 낮습니다. '커플 세트'와 같은 번들 구성을 통해 1인당 결제 금액을 높이는 전략이 즉각적인 이익 개선에 도움이 됩니다.`
+                evidence: `평균 객단가가 ${Math.round(baseline.avgTicket / 1000).toLocaleString()} 천원으로, 업계 평균 대비 낮습니다. '커플 세트'와 같은 번들 구성을 통해 1인당 결제 금액을 높이는 전략이 즉각적인 이익 개선에 도움이 됩니다.`
             };
         }
         // Condition C: Default -> Retention (Summer)
         return {
             id: 'c3',
             reason: '비수기 방어 및 재구매 유도',
-            evidence: `안정적인 매출 유지를 위해 기존 고객의 이탈을 막아야 할 때입니다. 방문형 홈케어 서비스나 멤버십 혜택을 강화해 '비수기 매출 공백'을 메우는 것을 추천합니다.`
+            evidence: `안정적인 매출 유지를 위해 기존 고객의 이탈을 막아야 할 때입니다.방문형 홈케어 서비스나 멤버십 혜택을 강화해 '비수기 매출 공백'을 메우는 것을 추천합니다.`
         };
     }, [baseline]);
 

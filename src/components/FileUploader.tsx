@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
-import { SaleRecord } from '../../types';
+import { SaleRecord } from '../types';
 import { processCSVData } from '../services/dataService';
 
 interface FileUploaderProps {
@@ -46,12 +46,11 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onDataLoaded }) => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 animate-in fade-in zoom-in duration-300">
-      <div 
-        className={`w-full max-w-xl p-10 border-2 border-dashed rounded-3xl text-center transition-all duration-300 ${
-          isDragging 
-            ? 'border-blue-500 bg-blue-50/50 scale-105 shadow-xl' 
+      <div
+        className={`w-full max-w-xl p-10 border-2 border-dashed rounded-3xl text-center transition-all duration-300 ${isDragging
+            ? 'border-blue-500 bg-blue-50/50 scale-105 shadow-xl'
             : 'border-slate-200 bg-white hover:border-slate-300 shadow-sm hover:shadow-md'
-        }`}
+          }`}
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={onDrop}
@@ -59,18 +58,18 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onDataLoaded }) => {
         <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
           <Upload className="w-10 h-10 text-blue-600" strokeWidth={1.5} />
         </div>
-        
+
         <h2 className="text-2xl font-bold text-slate-800 mb-3">매출 장부 파일 업로드</h2>
         <p className="text-slate-500 mb-8 leading-relaxed">
-          가지고 계신 <strong>엑셀(CSV) 파일</strong>을 이곳에 끌어다 놓으세요.<br/>
+          가지고 계신 <strong>엑셀(CSV) 파일</strong>을 이곳에 끌어다 놓으세요.<br />
           복잡한 형식이여도 자동으로 분석하여 대시보드로 변환합니다.
         </p>
 
         <label className="inline-flex">
-          <input 
-            type="file" 
-            accept=".csv,.txt" 
-            className="hidden" 
+          <input
+            type="file"
+            accept=".csv,.txt"
+            className="hidden"
             onChange={(e) => e.target.files && handleFile(e.target.files[0])}
           />
           <span className="px-8 py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold cursor-pointer transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0">

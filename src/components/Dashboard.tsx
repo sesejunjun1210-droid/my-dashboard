@@ -4,8 +4,7 @@ import {
   BarChart, Bar, Cell, PieChart, Pie, Legend, ComposedChart, Line,
 } from 'recharts';
 import {
-  DollarSign, Wallet, Briefcase, Zap, Filter, Lightbulb,
-  PieChart as PieIcon, Target, Trophy, Cloud, TrendingUp
+  DollarSign, Wallet, Briefcase, Zap, Lightbulb, Trophy, Cloud
 } from 'lucide-react';
 import { SaleRecord } from '../types';
 import StatCard from './StatCard';
@@ -152,18 +151,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
     return Object.entries(textMap).map(([text, value]) => ({ text, value })).sort((a, b) => b.value - a.value).slice(0, 15);
   }, [filteredData]);
 
-  const monthlySummary = useMemo(() => {
-    const map: Record<string, { year: number; month: number; sales: number; cost: number; net: number }> = {};
-    filteredData.forEach((row) => {
-      const key = `${row.year}-${String(row.month).padStart(2, '0')}`;
-      if (!map[key]) map[key] = { year: row.year, month: row.month, sales: 0, cost: 0, net: 0 };
-      map[key].sales += row.sales || 0;
-      map[key].cost += row.cost || 0;
-      map[key].net += row.netProfit;
-    });
-    const rows = Object.values(map).sort((a, b) => (a.year !== b.year ? a.year - b.year : a.month - b.month));
-    return { rows, totalSales: rows.reduce((s, r) => s + r.sales, 0), totalCost: rows.reduce((s, r) => s + r.cost, 0), totalNet: rows.reduce((s, r) => s + r.net, 0) };
-  }, [filteredData]);
+
 
   if (!data || data.length === 0) return <div className="p-20 text-center"><p className="text-slate-500 font-medium">데이터가 없습니다.</p></div>;
   const monthLabel = selectedMonth === 'all' ? new Date().getMonth() + 1 : selectedMonth;

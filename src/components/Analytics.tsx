@@ -15,7 +15,7 @@ import {
   Line,
   Legend
 } from 'recharts';
-import { SaleRecord, AggregatedMetric } from '../../types';
+import { SaleRecord, AggregatedMetric } from '../types';
 import {
   TrendingUp,
   Activity,
@@ -140,35 +140,35 @@ const Analytics: React.FC<AnalyticsProps> = ({ data }) => {
     // 1. Identify Top 5 Brands by Revenue
     const brandRevenueMap: Record<string, number> = {};
     data.forEach(d => {
-        const b = d.brand || 'Others';
-        if (b === 'Others') return;
-        brandRevenueMap[b] = (brandRevenueMap[b] || 0) + d.sales;
+      const b = d.brand || 'Others';
+      if (b === 'Others') return;
+      brandRevenueMap[b] = (brandRevenueMap[b] || 0) + d.sales;
     });
     const topBrands = Object.entries(brandRevenueMap)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(entry => entry[0]);
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(entry => entry[0]);
 
     // 2. Group data by Month (YYYY-MM) and Brand
     const monthMap: Record<string, any> = {}; // key: "2024-01"
-    
+
     // Sort data chronologically first
-    const sortedRawData = [...data].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const sortedRawData = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     sortedRawData.forEach(d => {
-        const key = `${d.year}-${String(d.month).padStart(2, '0')}`;
-        if (!monthMap[key]) {
-            monthMap[key] = { name: key };
-            topBrands.forEach(b => monthMap[key][b] = 0);
-        }
-        if (topBrands.includes(d.brand)) {
-            monthMap[key][d.brand] += d.sales;
-        }
+      const key = `${d.year}-${String(d.month).padStart(2, '0')}`;
+      if (!monthMap[key]) {
+        monthMap[key] = { name: key };
+        topBrands.forEach(b => monthMap[key][b] = 0);
+      }
+      if (topBrands.includes(d.brand)) {
+        monthMap[key][d.brand] += d.sales;
+      }
     });
 
-    return { 
-        chartData: Object.values(monthMap), 
-        topBrands 
+    return {
+      chartData: Object.values(monthMap),
+      topBrands
     };
   }, [data]);
 
@@ -176,64 +176,64 @@ const Analytics: React.FC<AnalyticsProps> = ({ data }) => {
   const cohortData = useMemo(() => {
     // A. Identify First Visit Month for each customer
     const firstVisitMap = new Map<string, string>(); // Phone -> "YYYY-MM"
-    
+
     // Sort data by date ascending
     const sortedByDate = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    
+
     sortedByDate.forEach(d => {
-        if (!d.phone || d.phone.length < 8) return;
-        const cleanPhone = d.phone.replace(/[^0-9]/g, '');
-        const visitMonth = `${d.year}-${String(d.month).padStart(2, '0')}`;
-        
-        if (!firstVisitMap.has(cleanPhone)) {
-            firstVisitMap.set(cleanPhone, visitMonth);
-        }
+      if (!d.phone || d.phone.length < 8) return;
+      const cleanPhone = d.phone.replace(/[^0-9]/g, '');
+      const visitMonth = `${d.year}-${String(d.month).padStart(2, '0')}`;
+
+      if (!firstVisitMap.has(cleanPhone)) {
+        firstVisitMap.set(cleanPhone, visitMonth);
+      }
     });
 
     // B. Build Cohort Grid
     // Cohorts: Rows (First Visit Month), Columns: Months Since First Visit (0, 1, 2...)
     // Re-processing for accurate unique counts
     const cohortSets: Record<string, { total: Set<string>, retention: Record<number, Set<string>> }> = {};
-    
+
     sortedByDate.forEach(d => {
-        if (!d.phone || d.phone.length < 8) return;
-        const cleanPhone = d.phone.replace(/[^0-9]/g, '');
-        const cohortMonth = firstVisitMap.get(cleanPhone);
-        if (!cohortMonth) return;
+      if (!d.phone || d.phone.length < 8) return;
+      const cleanPhone = d.phone.replace(/[^0-9]/g, '');
+      const cohortMonth = firstVisitMap.get(cleanPhone);
+      if (!cohortMonth) return;
 
-        const visitMonth = `${d.year}-${String(d.month).padStart(2, '0')}`;
-        const cDate = new Date(cohortMonth + "-01");
-        const vDate = new Date(visitMonth + "-01");
-        const diff = (vDate.getFullYear() - cDate.getFullYear()) * 12 + (vDate.getMonth() - cDate.getMonth());
+      const visitMonth = `${d.year}-${String(d.month).padStart(2, '0')}`;
+      const cDate = new Date(cohortMonth + "-01");
+      const vDate = new Date(visitMonth + "-01");
+      const diff = (vDate.getFullYear() - cDate.getFullYear()) * 12 + (vDate.getMonth() - cDate.getMonth());
 
-        if (!cohortSets[cohortMonth]) {
-            cohortSets[cohortMonth] = { total: new Set(), retention: {} };
-        }
-        
-        // Add to total (Month 0)
-        cohortSets[cohortMonth].total.add(cleanPhone);
+      if (!cohortSets[cohortMonth]) {
+        cohortSets[cohortMonth] = { total: new Set(), retention: {} };
+      }
 
-        // Add to retention month bucket
-        if (!cohortSets[cohortMonth].retention[diff]) {
-            cohortSets[cohortMonth].retention[diff] = new Set();
-        }
-        cohortSets[cohortMonth].retention[diff].add(cleanPhone);
+      // Add to total (Month 0)
+      cohortSets[cohortMonth].total.add(cleanPhone);
+
+      // Add to retention month bucket
+      if (!cohortSets[cohortMonth].retention[diff]) {
+        cohortSets[cohortMonth].retention[diff] = new Set();
+      }
+      cohortSets[cohortMonth].retention[diff].add(cleanPhone);
     });
 
     // Convert Sets to Numbers and Format for Render
     const rows = Object.keys(cohortSets).sort().map(month => {
-        const data = cohortSets[month];
-        const total = data.total.size;
-        const retentionStats: number[] = [];
-        
-        // Show up to 6 months after
-        for (let i = 0; i <= 6; i++) {
-            const count = data.retention[i]?.size || 0;
-            const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
-            retentionStats.push(percentage);
-        }
+      const data = cohortSets[month];
+      const total = data.total.size;
+      const retentionStats: number[] = [];
 
-        return { month, total, retentionStats };
+      // Show up to 6 months after
+      for (let i = 0; i <= 6; i++) {
+        const count = data.retention[i]?.size || 0;
+        const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+        retentionStats.push(percentage);
+      }
+
+      return { month, total, retentionStats };
     });
 
     return rows; // Recent cohorts at bottom
@@ -272,97 +272,97 @@ const Analytics: React.FC<AnalyticsProps> = ({ data }) => {
       {/* Brand Trend Chart (New) */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
         <div className="mb-6">
-            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <BarChart2 size={18} className="text-purple-600" />
-                브랜드별 매출 추이 (Top 5)
-            </h3>
-            <p className="text-xs text-slate-500 mt-1">
-                주요 브랜드들의 월별 성장세를 비교합니다. 어떤 브랜드가 뜨고 있는지 확인하세요.
-            </p>
+          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <BarChart2 size={18} className="text-purple-600" />
+            브랜드별 매출 추이 (Top 5)
+          </h3>
+          <p className="text-xs text-slate-500 mt-1">
+            주요 브랜드들의 월별 성장세를 비교합니다. 어떤 브랜드가 뜨고 있는지 확인하세요.
+          </p>
         </div>
         <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={brandTrendData.chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#94a3b8" />
-                    <YAxis tickFormatter={(v) => `${(v/10000).toFixed(0)}만`} tick={{ fontSize: 10 }} stroke="#94a3b8" width={30} />
-                    <Tooltip 
-                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                        formatter={(val: number) => `₩ ${val.toLocaleString()}`}
-                    />
-                    <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                    {brandTrendData.topBrands.map((brand, idx) => (
-                        <Line 
-                            key={brand}
-                            type="monotone" 
-                            dataKey={brand} 
-                            stroke={BRAND_COLORS[idx % BRAND_COLORS.length]} 
-                            strokeWidth={2}
-                            dot={{ r: 2 }}
-                            activeDot={{ r: 5 }}
-                        />
-                    ))}
-                </LineChart>
-            </ResponsiveContainer>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={brandTrendData.chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#94a3b8" />
+              <YAxis tickFormatter={(v) => `${(v / 10000).toFixed(0)}만`} tick={{ fontSize: 10 }} stroke="#94a3b8" width={30} />
+              <Tooltip
+                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                formatter={(val: number) => `₩ ${val.toLocaleString()}`}
+              />
+              <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+              {brandTrendData.topBrands.map((brand, idx) => (
+                <Line
+                  key={brand}
+                  type="monotone"
+                  dataKey={brand}
+                  stroke={BRAND_COLORS[idx % BRAND_COLORS.length]}
+                  strokeWidth={2}
+                  dot={{ r: 2 }}
+                  activeDot={{ r: 5 }}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
       {/* NEW: Cohort Analysis */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="mb-6">
-            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <GitMerge size={18} className="text-rose-500" />
-                코호트 유지율 분석 (Cohort Retention)
-            </h3>
-            <p className="text-xs text-slate-500 mt-1">
-                월별 신규 고객이 이후 개월(Month + N)에 얼마나 재방문하는지 보여주는 히트맵입니다. 색이 진할수록 충성도가 높습니다.
-            </p>
+          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <GitMerge size={18} className="text-rose-500" />
+            코호트 유지율 분석 (Cohort Retention)
+          </h3>
+          <p className="text-xs text-slate-500 mt-1">
+            월별 신규 고객이 이후 개월(Month + N)에 얼마나 재방문하는지 보여주는 히트맵입니다. 색이 진할수록 충성도가 높습니다.
+          </p>
         </div>
         <div className="overflow-x-auto pb-2">
-            <table className="w-full text-center border-collapse min-w-[600px]">
-                <thead>
-                    <tr className="text-xs font-bold text-slate-500 border-b border-slate-100">
-                        <th className="p-3 text-left w-32 sticky left-0 bg-white z-10">첫 방문 월</th>
-                        <th className="p-3 w-20">신규 고객</th>
-                        <th className="p-3">Month 0</th>
-                        <th className="p-3">Month +1</th>
-                        <th className="p-3">Month +2</th>
-                        <th className="p-3">Month +3</th>
-                        <th className="p-3">Month +4</th>
-                        <th className="p-3">Month +5</th>
-                        <th className="p-3">Month +6</th>
-                    </tr>
-                </thead>
-                <tbody className="text-sm">
-                    {cohortData.map((row) => (
-                        <tr key={row.month} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                            <td className="p-3 font-bold text-slate-700 text-left text-xs sticky left-0 bg-white z-10 border-r border-slate-50">{row.month}</td>
-                            <td className="p-3 text-slate-500 font-mono text-xs">{row.total}명</td>
-                            {row.retentionStats.map((pct, i) => {
-                                // Dynamic background color based on percentage
-                                let bg = 'bg-white';
-                                let text = 'text-slate-300';
-                                if (pct > 0) {
-                                    text = 'text-blue-900';
-                                    if (pct >= 50) bg = 'bg-blue-500 text-white';
-                                    else if (pct >= 20) bg = 'bg-blue-300 text-white';
-                                    else if (pct >= 10) bg = 'bg-blue-200';
-                                    else if (pct >= 5) bg = 'bg-blue-100';
-                                    else bg = 'bg-blue-50';
-                                }
-                                
-                                return (
-                                    <td key={i} className="p-1">
-                                        <div className={`w-full h-8 flex items-center justify-center rounded-md ${bg} text-xs font-medium ${text}`}>
-                                            {pct > 0 ? `${pct}%` : '-'}
-                                        </div>
-                                    </td>
-                                );
-                            })}
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+          <table className="w-full text-center border-collapse min-w-[600px]">
+            <thead>
+              <tr className="text-xs font-bold text-slate-500 border-b border-slate-100">
+                <th className="p-3 text-left w-32 sticky left-0 bg-white z-10">첫 방문 월</th>
+                <th className="p-3 w-20">신규 고객</th>
+                <th className="p-3">Month 0</th>
+                <th className="p-3">Month +1</th>
+                <th className="p-3">Month +2</th>
+                <th className="p-3">Month +3</th>
+                <th className="p-3">Month +4</th>
+                <th className="p-3">Month +5</th>
+                <th className="p-3">Month +6</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm">
+              {cohortData.map((row) => (
+                <tr key={row.month} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                  <td className="p-3 font-bold text-slate-700 text-left text-xs sticky left-0 bg-white z-10 border-r border-slate-50">{row.month}</td>
+                  <td className="p-3 text-slate-500 font-mono text-xs">{row.total}명</td>
+                  {row.retentionStats.map((pct, i) => {
+                    // Dynamic background color based on percentage
+                    let bg = 'bg-white';
+                    let text = 'text-slate-300';
+                    if (pct > 0) {
+                      text = 'text-blue-900';
+                      if (pct >= 50) bg = 'bg-blue-500 text-white';
+                      else if (pct >= 20) bg = 'bg-blue-300 text-white';
+                      else if (pct >= 10) bg = 'bg-blue-200';
+                      else if (pct >= 5) bg = 'bg-blue-100';
+                      else bg = 'bg-blue-50';
+                    }
+
+                    return (
+                      <td key={i} className="p-1">
+                        <div className={`w-full h-8 flex items-center justify-center rounded-md ${bg} text-xs font-medium ${text}`}>
+                          {pct > 0 ? `${pct}%` : '-'}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -527,17 +527,15 @@ const Analytics: React.FC<AnalyticsProps> = ({ data }) => {
           <div className="flex bg-slate-100 p-1 rounded-lg">
             <button
               onClick={() => setViewMode('menu')}
-              className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${
-                viewMode === 'menu' ? 'bg-white shadow text-slate-800' : 'text-slate-500'
-              }`}
+              className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'menu' ? 'bg-white shadow text-slate-800' : 'text-slate-500'
+                }`}
             >
               작업별
             </button>
             <button
               onClick={() => setViewMode('brand')}
-              className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${
-                viewMode === 'brand' ? 'bg-white shadow text-slate-800' : 'text-slate-500'
-              }`}
+              className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'brand' ? 'bg-white shadow text-slate-800' : 'text-slate-500'
+                }`}
             >
               브랜드별
             </button>
@@ -601,9 +599,8 @@ const Analytics: React.FC<AnalyticsProps> = ({ data }) => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <span
-                      className={`font-bold ${
-                        row.margin >= 50 ? 'text-emerald-600' : 'text-slate-500'
-                      }`}
+                      className={`font-bold ${row.margin >= 50 ? 'text-emerald-600' : 'text-slate-500'
+                        }`}
                     >
                       {row.margin}%
                     </span>

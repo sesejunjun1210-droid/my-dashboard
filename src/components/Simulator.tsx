@@ -3,7 +3,6 @@ import { SaleRecord } from '../types';
 import {
     TrendingUp,
     DollarSign,
-    Users,
     Calculator,
     RefreshCcw,
     Zap
