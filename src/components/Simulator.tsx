@@ -1,11 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { SaleRecord } from '../../types';
+import { SaleRecord } from '../types';
 import {
     TrendingUp,
     DollarSign,
     Users,
     Calculator,
-    ArrowRight,
     RefreshCcw,
     Zap
 } from 'lucide-react';
@@ -19,6 +18,7 @@ import {
     ResponsiveContainer,
     Cell
 } from 'recharts';
+import CampaignIntelligence, { CampaignIdea } from './CampaignIntelligence';
 
 interface SimulatorProps {
     data: SaleRecord[];
@@ -30,6 +30,33 @@ const Simulator: React.FC<SimulatorProps> = ({ data }) => {
     const [churnReduction, setChurnReduction] = useState<number>(0); // %
     const [newCustomerGrowth, setNewCustomerGrowth] = useState<number>(0); // %
     const [costReduction, setCostReduction] = useState<number>(0); // %
+
+    const handleApplyCampaign = (campaign: CampaignIdea) => {
+        setPriceIncrease(campaign.impact.revenue > 0 && campaign.id === 'c2' ? 5 : 0); // Example logic, refined below
+        // Actually, let's map impact directly to sliders where possible
+        // Revenue impact is a result, not an input. 
+        // Growth -> newCustomerGrowth
+        // Cost -> costReduction (or negative cost)
+
+        // Let's use the campaign tags/logic to map to inputs more intelligently
+        // impact.growth -> Set newCustomerGrowth
+        // impact.cost -> If cost is reduced, set costReduction. If cost INCREASES (marketing spend), we might need to reflect that.
+        // For simplicity in this v1:
+
+        if (campaign.id === 'c1') { // Spring Promo
+            setNewCustomerGrowth(25);
+            setPriceIncrease(0);
+            setChurnReduction(5);
+        } else if (campaign.id === 'c2') { // Valentine Bundle
+            setPriceIncrease(10); // Bundle raises AOV
+            setNewCustomerGrowth(10);
+            setChurnReduction(0);
+        } else if (campaign.id === 'c3') { // Rainy Season
+            setChurnReduction(15); // Retention focus
+            setNewCustomerGrowth(5);
+            setPriceIncrease(0);
+        }
+    };
 
     // 1. Calculate Baseline Metrics (Current Reality)
     const baseline = useMemo(() => {
@@ -75,17 +102,76 @@ const Simulator: React.FC<SimulatorProps> = ({ data }) => {
     }, [baseline, priceIncrease, churnReduction, newCustomerGrowth, costReduction]);
 
     // Chart Data
-    const chartData = [
-        { name: '현재 매출', value: baseline.totalRevenue, type: 'current' },
-        { name: '예상 매출', value: projection.revenue, type: 'projected' },
-    ];
-
     const profitChartData = [
         { name: '현재 순이익', value: baseline.netProfit, type: 'current' },
         { name: '예상 순이익', value: projection.netProfit, type: 'projected' },
     ];
 
     const formatMoney = (n: number) => `₩ ${Math.round(n / 10000).toLocaleString()}만`;
+
+    // Scenario Saving Logic
+    type SavedScenario = {
+        id: string;
+        name: string;
+        date: string;
+        params: {
+            priceIncrease: number;
+            churnReduction: number;
+            newCustomerGrowth: number;
+            costReduction: number;
+        };
+        result: {
+            revenueDiff: number;
+            profitDiff: number;
+        };
+    };
+
+    const [savedScenarios, setSavedScenarios] = useState<SavedScenario[]>([]);
+    const [scenarioName, setScenarioName] = useState('');
+
+    // Load from LocalStorage on Mount
+    React.useEffect(() => {
+        const saved = localStorage.getItem('artimilano_scenarios');
+        if (saved) {
+            setSavedScenarios(JSON.parse(saved));
+        }
+    }, []);
+
+    const saveScenario = () => {
+        if (!scenarioName.trim()) {
+            alert('시나리오 이름을 입력해주세요.');
+            return;
+        }
+        const newScenario: SavedScenario = {
+            id: Date.now().toString(),
+            name: scenarioName,
+            date: new Date().toLocaleDateString(),
+            params: { priceIncrease, churnReduction, newCustomerGrowth, costReduction },
+            result: {
+                revenueDiff: projection.revenueDiff,
+                profitDiff: projection.profitDiff
+            }
+        };
+        const updated = [newScenario, ...savedScenarios];
+        setSavedScenarios(updated);
+        localStorage.setItem('artimilano_scenarios', JSON.stringify(updated));
+        setScenarioName('');
+        alert('시나리오가 저장되었습니다.');
+    };
+
+    const loadScenario = (s: SavedScenario) => {
+        setPriceIncrease(s.params.priceIncrease);
+        setChurnReduction(s.params.churnReduction);
+        setNewCustomerGrowth(s.params.newCustomerGrowth);
+        setCostReduction(s.params.costReduction);
+    };
+
+    const deleteScenario = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const updated = savedScenarios.filter(s => s.id !== id);
+        setSavedScenarios(updated);
+        localStorage.setItem('artimilano_scenarios', JSON.stringify(updated));
+    };
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 pb-20">
@@ -108,15 +194,16 @@ const Simulator: React.FC<SimulatorProps> = ({ data }) => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Controls Panel */}
+                {/* Left Column: Controls & Intelligence */}
                 <div className="lg:col-span-4 space-y-6">
+                    {/* 1. Variable Controls */}
                     <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                         <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
                             🎛️ 변수 설정 (Variables)
                         </h3>
 
                         <div className="space-y-8">
-                            {/* 1. Price Increase */}
+                            {/* Price Increase */}
                             <div>
                                 <div className="flex justify-between mb-2">
                                     <label className="text-sm font-bold text-slate-700">단가 인상률 (Price)</label>
@@ -131,7 +218,7 @@ const Simulator: React.FC<SimulatorProps> = ({ data }) => {
                                 <p className="text-xs text-slate-400 mt-1">평균 객단가 상승 효과</p>
                             </div>
 
-                            {/* 2. Churn Reduction */}
+                            {/* Churn Reduction */}
                             <div>
                                 <div className="flex justify-between mb-2">
                                     <label className="text-sm font-bold text-slate-700">단골 유지율 개선 (Retention)</label>
@@ -146,7 +233,7 @@ const Simulator: React.FC<SimulatorProps> = ({ data }) => {
                                 <p className="text-xs text-slate-400 mt-1">이탈 고객 재방문 유도</p>
                             </div>
 
-                            {/* 3. New Customer Growth */}
+                            {/* New Customer Growth */}
                             <div>
                                 <div className="flex justify-between mb-2">
                                     <label className="text-sm font-bold text-slate-700">신규 유입 증가 (Growth)</label>
@@ -161,7 +248,7 @@ const Simulator: React.FC<SimulatorProps> = ({ data }) => {
                                 <p className="text-xs text-slate-400 mt-1">마케팅을 통한 신규 고객</p>
                             </div>
 
-                            {/* 4. Cost Reduction */}
+                            {/* Cost Reduction */}
                             <div>
                                 <div className="flex justify-between mb-2">
                                     <label className="text-sm font-bold text-slate-700">비용 절감 (Efficiency)</label>
@@ -177,18 +264,79 @@ const Simulator: React.FC<SimulatorProps> = ({ data }) => {
                             </div>
                         </div>
 
-                        <button
-                            onClick={() => {
-                                setPriceIncrease(0);
-                                setChurnReduction(0);
-                                setNewCustomerGrowth(0);
-                                setCostReduction(0);
-                            }}
-                            className="w-full mt-8 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors flex items-center justify-center gap-2"
-                        >
-                            <RefreshCcw size={16} />초기화
-                        </button>
+                        <div className="flex gap-2 mt-8">
+                            <button
+                                onClick={() => {
+                                    setPriceIncrease(0);
+                                    setChurnReduction(0);
+                                    setNewCustomerGrowth(0);
+                                    setCostReduction(0);
+                                }}
+                                className="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors flex items-center justify-center gap-2 text-sm"
+                            >
+                                <RefreshCcw size={16} />초기화
+                            </button>
+                        </div>
                     </div>
+
+                    {/* Scenario Library */}
+                    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            💾 시나리오 보관함
+                        </h3>
+
+                        <div className="flex gap-2 mb-4">
+                            <input
+                                type="text"
+                                placeholder="예: 2024 봄 시즌 전략"
+                                className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-2 focus:ring-slate-200"
+                                value={scenarioName}
+                                onChange={(e) => setScenarioName(e.target.value)}
+                            />
+                            <button
+                                onClick={saveScenario}
+                                className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold hover:bg-slate-800 transition-colors"
+                            >
+                                저장
+                            </button>
+                        </div>
+
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                            {savedScenarios.length > 0 ? (
+                                savedScenarios.map(s => (
+                                    <div
+                                        key={s.id}
+                                        onClick={() => loadScenario(s)}
+                                        className="group p-3 rounded-xl border border-slate-100 bg-slate-50 hover:bg-white hover:border-slate-300 hover:shadow-md transition-all cursor-pointer relative"
+                                    >
+                                        <div className="flex justify-between items-start mb-1">
+                                            <span className="text-sm font-bold text-slate-800 group-hover:text-blue-600">{s.name}</span>
+                                            <span className="text-[10px] text-slate-400">{s.date}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs">
+                                            <span className="text-slate-500">순익 Effect:</span>
+                                            <span className={`font-bold ${s.result.profitDiff >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                                                {s.result.profitDiff > 0 ? '+' : ''}{formatMoney(s.result.profitDiff)}
+                                            </span>
+                                        </div>
+                                        <button
+                                            onClick={(e) => deleteScenario(s.id, e)}
+                                            className="absolute top-2 right-2 p-1 text-slate-300 hover:text-rose-500 rounded-full hover:bg-rose-50 transition-colors opacity-0 group-hover:opacity-100"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                                        </button>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-8 text-slate-400 text-xs">
+                                    저장된 시나리오가 없습니다.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 2. Marketing Intelligence (Existing) */}
+                    <CampaignIntelligence onApplyCampaign={handleApplyCampaign} baseline={baseline} />
                 </div>
 
                 {/* Results Panel */}
@@ -246,7 +394,7 @@ const Simulator: React.FC<SimulatorProps> = ({ data }) => {
                         </div>
                         <div className="mt-4 bg-slate-50 p-4 rounded-xl text-center">
                             <p className="text-sm font-medium text-slate-600">
-                                이 시나리오대로라면, 연간 순이익이 <span className="text-emerald-600 font-bold">{Math.round((projection.profitDiff / baseline.netProfit) * 100)}%</span> 증가합니다.
+                                이 시나리오대로라면, 연간 순이익이 <span className="text-emerald-600 font-bold">{Math.round(((projection.profitDiff || 0) / (baseline.netProfit || 1)) * 100)}%</span> 증가합니다.
                             </p>
                         </div>
                     </div>

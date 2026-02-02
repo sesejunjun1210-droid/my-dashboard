@@ -7,8 +7,9 @@ import {
   DollarSign, Wallet, Briefcase, Zap, Filter, Lightbulb,
   PieChart as PieIcon, Target, Trophy, Cloud, TrendingUp
 } from 'lucide-react';
-import { SaleRecord } from '../../types';
+import { SaleRecord } from '../types';
 import StatCard from './StatCard';
+import ChurnAlert from './ChurnAlert';
 
 interface DashboardProps {
   data: SaleRecord[];
@@ -246,22 +247,26 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col">
-          <h3 className="text-base font-bold mb-4">Weekly Pattern</h3>
-          <div className="flex-1 w-full min-h-[220px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weekdayData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }} dy={10} />
-                <Tooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', fontSize: '12px' }} formatter={(val: number) => [`₩ ${val.toLocaleString()}`, '']} />
-                <Bar dataKey="revenue" radius={[4, 4, 4, 4]}>
-                  {weekdayData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={index >= 5 ? '#94a3b8' : '#334155'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+        <div className="flex flex-col gap-6">
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col">
+            <h3 className="text-base font-bold mb-4">Weekly Pattern</h3>
+            <div className="flex-1 w-full min-h-[180px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={weekdayData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }} dy={10} />
+                  <Tooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', fontSize: '12px' }} formatter={(val: number) => [`₩ ${val.toLocaleString()}`, '']} />
+                  <Bar dataKey="revenue" radius={[4, 4, 4, 4]}>
+                    {weekdayData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={index >= 5 ? '#94a3b8' : '#334155'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
+
+          <ChurnAlert data={filteredData} />
         </div>
       </div>
 

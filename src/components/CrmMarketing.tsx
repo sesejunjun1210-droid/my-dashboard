@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { SaleRecord, CustomerStats } from '../../types';
-import { batchProcessCustomers } from '../../utils/dataIntelligence';
+import { SaleRecord, CustomerStats } from '../types';
+import { batchProcessCustomers } from '../utils/dataIntelligence';
 import {
   Users,
   Activity,
@@ -362,8 +362,8 @@ const CrmMarketing: React.FC<CrmMarketingProps> = ({ data }) => {
                 <div className="flex items-center gap-4 mb-1">
                   <div
                     className={`w-14 h-14 rounded-full flex items-center justify-center shadow-sm border-2 ${selectedCustomer.segment === 'VIP'
-                        ? 'bg-slate-900 border-amber-400 text-amber-400'
-                        : 'bg-white border-blue-100 text-blue-600'
+                      ? 'bg-slate-900 border-amber-400 text-amber-400'
+                      : 'bg-white border-blue-100 text-blue-600'
                       }`}
                   >
                     {selectedCustomer.segment === 'VIP' ? (
